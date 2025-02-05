@@ -1,0 +1,7 @@
+Flask
+opencv-python
+mediapipe
+numpy
+Pillow
+pyttsx3
+Werkzeug
