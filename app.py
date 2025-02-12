@@ -1,9 +1,11 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, redirect, url_for, jsonify, send_from_directory
+import os
 import mediapipe as mp
 import cv2
 import math
 import datetime
-import pyttsx3
+import numpy as np
+import threading
 
 app = Flask(__name__)
 
@@ -19,92 +21,230 @@ class SignLanguageConverter:
             min_detection_confidence=0.7,
             min_tracking_confidence=0.5
         )
+        self.history = []
+        self.history_limit = 10
+        self.last_gesture_time = datetime.datetime.now()
+        self.gesture_cooldown = 0.5
         self.current_gesture = None
+        
+    def calculate_angle(self, p1, p2, p3):
+        """Calculate angle between three points"""
+        v1 = np.array([p1.x - p2.x, p1.y - p2.y])
+        v2 = np.array([p3.x - p2.x, p3.y - p2.y])
+        
+        cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+        angle = np.arccos(np.clip(cos_angle, -1.0, 1.0))
+        return np.degrees(angle)
+    
+    def is_finger_extended(self, hand_landmarks, finger_tip_idx, finger_pip_idx, threshold=0.05):
+        """Check if a finger is extended"""
+        return hand_landmarks.landmark[finger_tip_idx].y < hand_landmarks.landmark[finger_pip_idx].y - threshold
+    
+    def is_finger_folded(self, hand_landmarks, finger_tip_idx, finger_pip_idx, threshold=0.05):
+        """Check if a finger is folded"""
+        return hand_landmarks.landmark[finger_tip_idx].y > hand_landmarks.landmark[finger_pip_idx].y + threshold
+    
+    def get_finger_states(self, hand_landmarks):
+        """Get the state of all fingers"""
+        states = {
+            'thumb': self.is_finger_extended(hand_landmarks, 4, 3),
+            'index': self.is_finger_extended(hand_landmarks, 8, 6),
+            'middle': self.is_finger_extended(hand_landmarks, 12, 10),
+            'ring': self.is_finger_extended(hand_landmarks, 16, 14),
+            'pinky': self.is_finger_extended(hand_landmarks, 20, 18)
+        }
+        return states
     
     def detect_gesture(self, image):
         results = self.hands.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        new_gesture = None
+        
         if results.multi_hand_landmarks:
-            hand_landmarks = results.multi_hand_landmarks[0]
-            self.current_gesture = self.get_gesture(hand_landmarks)
+            current_time = datetime.datetime.now()
+            time_diff = (current_time - self.last_gesture_time).total_seconds()
+            
+            if time_diff >= self.gesture_cooldown:
+                hand_landmarks = results.multi_hand_landmarks[0]
+                new_gesture = self.get_gesture(hand_landmarks)
+                
+                if new_gesture != self.current_gesture:
+                    if new_gesture is not None:
+                        timestamp = current_time.strftime("%H:%M:%S")
+                        self.history.append({
+                            'gesture': new_gesture,
+                            'timestamp': timestamp
+                        })
+                        if len(self.history) > self.history_limit:
+                            self.history.pop(0)
+                    
+                    self.current_gesture = new_gesture
+                    self.last_gesture_time = current_time
+        
         return results
     
     def get_gesture(self, hand_landmarks):
+        # Get landmarks for easier reference
         thumb_tip = hand_landmarks.landmark[4]
-        index_finger_tip = hand_landmarks.landmark[8]
-        middle_finger_tip = hand_landmarks.landmark[12]
-        ring_finger_tip = hand_landmarks.landmark[16]
-        little_finger_tip = hand_landmarks.landmark[20]
+        index_tip = hand_landmarks.landmark[8]
+        middle_tip = hand_landmarks.landmark[12]
+        ring_tip = hand_landmarks.landmark[16]
+        pinky_tip = hand_landmarks.landmark[20]
+        
+        # Get finger states
+        states = self.get_finger_states(hand_landmarks)
+        
+        # Live Long (Vulcan) Sign
+        if (states['index'] and states['middle'] and 
+            states['ring'] and states['pinky'] and
+            abs(middle_tip.x - ring_tip.x) > 0.04 and
+            abs(index_tip.y - middle_tip.y) < 0.03 and
+            abs(ring_tip.y - pinky_tip.y) < 0.03):
+            return "Live Long 🖖"
+        
+        # Fist
+        # if (all(not state for state in states.values()) and
+        #     not states['thumb']):
+        #     return "Fist ✊"
+        
+        # Point Right
+        if (states['index'] and not states['middle'] and
+            not states['ring'] and not states['pinky'] and
+            index_tip.x > hand_landmarks.landmark[5].x):
+            return "Point Right 👉"
+        
+        # Point Left
+        if (states['index'] and not states['middle'] and
+            not states['ring'] and not states['pinky'] and
+            index_tip.x < hand_landmarks.landmark[5].x):
+            return "Point Left 👈"
+        
+        # Point Up
+        if (states['index'] and not states['middle'] and
+            not states['ring'] and not states['pinky'] and
+            index_tip.y < hand_landmarks.landmark[5].y - 0.1):
+            return "Point Up 👆"
+        
+        # Point Down
+        if (states['index'] and not states['middle'] and
+            not states['ring'] and not states['pinky'] and
+            index_tip.y > hand_landmarks.landmark[5].y + 0.1):
+            return "Point Down 👇"
+        
+        # Middle Finger
+        # if (states['middle'] and not states['index'] and
+        #     not states['ring'] and not states['pinky'] and
+        #     middle_tip.y < hand_landmarks.landmark[9].y - 0.15):
+        #     return "Middle Finger 🖕"
+        
+        # Heart
+        thumb_index_dist = math.sqrt((thumb_tip.x - index_tip.x)**2 + (thumb_tip.y - index_tip.y)**2)
+        if (thumb_index_dist < 0.1 and
+            not states['middle'] and not states['ring'] and
+            not states['pinky'] and
+            thumb_tip.x < index_tip.x and
+            abs(thumb_tip.y - index_tip.y) < 0.05):
+            return "Heart ❤️"
+        
+        # Peace
+        if (states['index'] and states['middle'] and
+            not states['ring'] and not states['pinky'] and
+            abs(index_tip.x - middle_tip.x) < 0.08 and
+            abs(index_tip.y - middle_tip.y) < 0.08):
+            return "Peace ✌️"
+        
+        # Rock On
+        if (states['index'] and not states['middle'] and
+            not states['ring'] and states['pinky']):
+            return "Rock On 🤘"
+        
+        # OK Sign
+        if (abs(thumb_tip.x - index_tip.x) < 0.05 and
+            abs(thumb_tip.y - index_tip.y) < 0.05 and
+            states['middle'] and states['ring'] and states['pinky']):
+            return "OK 👌"
+        
+        # Thumbs Up
+        if (states['thumb'] and thumb_tip.y < hand_landmarks.landmark[2].y and
+            not any(states[finger] for finger in ['index', 'middle', 'ring', 'pinky'])):
+            return "Thumbs Up 👍"
+        
+        # Thumbs Down
+        if (states['thumb'] and thumb_tip.y > hand_landmarks.landmark[2].y and
+            not any(states[finger] for finger in ['index', 'middle', 'ring', 'pinky'])):
+            return "Thumbs Down 👎"
+        
+        # Stop/High Five
+        if (all(states[finger] for finger in ['index', 'middle', 'ring', 'pinky']) and
+            abs(index_tip.y - pinky_tip.y) < 0.1):
+            return "Stop/High Five ✋"
+        
+        # Wave
+        if (all(states[finger] for finger in ['index', 'middle', 'ring', 'pinky']) and
+            abs(index_tip.x - pinky_tip.x) > 0.15):
+            return "Wave 👋"
 
-        # Check if hand is in OK gesture
-        if thumb_tip.y < index_finger_tip.y < middle_finger_tip.y < ring_finger_tip.y < little_finger_tip.y:
-            return "Okay"
-
-        # Check if hand is in Dislike gesture
-        elif thumb_tip.y > index_finger_tip.y > middle_finger_tip.y > ring_finger_tip.y > little_finger_tip.y:
-            return "I dislike It"
-
-        # Check if hand is in Victory gesture
-        elif index_finger_tip.y < middle_finger_tip.y and abs(index_finger_tip.x - middle_finger_tip.x) < 0.2:
-            return "We Won! Victory"
-
-        # Check if hand is in Stop gesture
-        elif thumb_tip.x < index_finger_tip.x < middle_finger_tip.x:
-            if (hand_landmarks.landmark[2].x < hand_landmarks.landmark[5].x) and \
-               (hand_landmarks.landmark[3].x < hand_landmarks.landmark[5].x) and \
-               (hand_landmarks.landmark[4].x < hand_landmarks.landmark[5].x):
-                return "STOP! Dont Move."
-            
-        # Check if hand is in Point gesture
-        wrist = hand_landmarks.landmark[0]
-        index_finger = (index_finger_tip.x, index_finger_tip.y, index_finger_tip.z)
-        wrist_coords = (wrist.x, wrist.y, wrist.z)
-        vector = (index_finger[0] - wrist_coords[0], 
-                 index_finger[1] - wrist_coords[1], 
-                 index_finger[2] - wrist_coords[2])
-        vector_len = math.sqrt(sum(x*x for x in vector))
-        if vector_len != 0:
-            vector_unit = tuple(x/vector_len for x in vector)
-            reference_vector = (0, 0, -1)
-            dot_product = sum(a*b for a, b in zip(vector_unit, reference_vector))
-            angle = math.acos(max(min(dot_product, 1), -1)) * 180 / math.pi
-            if 20 < angle < 80:
-                return "Hey You!!"
+        # Thank You
+        if (all(not states[finger] for finger in ['index', 'middle', 'ring', 'pinky']) and
+            states['thumb'] and
+            thumb_tip.x < hand_landmarks.landmark[5].x):
+            return "Thank You 🙏"
         
         return None
 
     def release(self):
         self.hands.close()
 
-# Initialize the converter and capture
-sign_lang_conv = SignLanguageConverter()
-camera = cv2.VideoCapture(0)
+# Initialize the converter and capture with error handling
+def init_camera():
+    camera = cv2.VideoCapture(0)
+    if not camera.isOpened():
+        camera = cv2.VideoCapture(1)  # Try another camera index
+    if not camera.isOpened():
+        raise RuntimeError("No camera found")
+    return camera
+
+try:
+    sign_lang_conv = SignLanguageConverter()
+    camera = init_camera()
+except Exception as e:
+    print(f"Error initializing camera: {e}")
 
 def generate_frames():
+    global camera
+    
     while True:
-        success, frame = camera.read()
-        if not success:
-            break
+        try:
+            success, frame = camera.read()
+            if not success:
+                camera.release()
+                camera = init_camera()
+                continue
+            
+            results = sign_lang_conv.detect_gesture(frame)
+            gesture = sign_lang_conv.current_gesture
+            
+            if gesture:
+                cv2.putText(frame, gesture, (10, 50), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
         
-        # Process the frame
-        results = sign_lang_conv.detect_gesture(frame)
-        gesture = sign_lang_conv.current_gesture
-        
-        # Draw gesture text
-        if gesture:
-            cv2.putText(frame, gesture, (10, 50), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        
-        # Draw hand landmarks
-        if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-        
-        # Convert frame to jpg
-        ret, buffer = cv2.imencode('.jpg', frame)
-        frame = buffer.tobytes()
-        
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        except Exception as e:
+            print(f"Error in generate_frames: {e}")
+            try:
+                camera.release()
+            except:
+                pass
+            camera = init_camera()
+            continue
 
 @app.route('/')
 def index():
@@ -112,12 +252,37 @@ def index():
 
 @app.route('/detect')
 def detect():
-    return render_template('detect.html')
+    return render_template('detect.html', history=sign_lang_conv.history)
+
+@app.route('/get_history')
+def get_history():
+    return jsonify({'history': sign_lang_conv.history})
 
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(), 
                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/clear_history', methods=['POST'])
+def clear_history():
+    sign_lang_conv.history.clear()
+    return redirect(url_for('detect'))
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                             'favicon.svg', mimetype='image/vnd.microsoft.icon')
+
+@app.route('/save_history')
+def save_history():
+    history_text = "\n".join(
+        [f"{entry['timestamp']}: {entry['gesture']}" for entry in sign_lang_conv.history]
+    )
+    return Response(
+        history_text,
+        mimetype="text/plain",
+        headers={"Content-disposition": "attachment; filename=gesture_history.txt"}
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
