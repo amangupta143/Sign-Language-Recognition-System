@@ -1,4 +1,5 @@
 Flask
+numpy
 opencv-python
 mediapipe
 numpy
