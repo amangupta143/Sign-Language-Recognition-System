@@ -6,6 +6,7 @@ import math
 import datetime
 import numpy as np
 import threading
+import re
 
 app = Flask(__name__)
 
@@ -130,12 +131,6 @@ class SignLanguageConverter:
             index_tip.y > hand_landmarks.landmark[5].y + 0.1):
             return "Point Down 👇"
         
-        # Middle Finger
-        # if (states['middle'] and not states['index'] and
-        #     not states['ring'] and not states['pinky'] and
-        #     middle_tip.y < hand_landmarks.landmark[9].y - 0.15):
-        #     return "Middle Finger 🖕"
-        
         # Heart
         thumb_index_dist = math.sqrt((thumb_tip.x - index_tip.x)**2 + (thumb_tip.y - index_tip.y)**2)
         if (thumb_index_dist < 0.1 and
@@ -209,6 +204,21 @@ try:
 except Exception as e:
     print(f"Error initializing camera: {e}")
 
+def remove_emoji(text):
+    """Remove emoji characters from text using regex pattern"""
+    emoji_pattern = re.compile(
+        "["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map
+        u"\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs (covers 🤘)
+        u"\U00002600-\U000026FF"  # misc symbols (covers ❤️)
+        u"\U00002700-\U000027BF"  # dingbats (covers ✌️)
+        u"\U0001F1E0-\U0001F1FF"  # flags
+        "]+", flags=re.UNICODE
+    )
+    return emoji_pattern.sub(r'', text).strip()
+
 def generate_frames():
     global camera
     
@@ -224,7 +234,9 @@ def generate_frames():
             gesture = sign_lang_conv.current_gesture
             
             if gesture:
-                cv2.putText(frame, gesture, (10, 50), 
+                # Remove emoji from gesture text
+                clean_gesture = remove_emoji(gesture)
+                cv2.putText(frame, clean_gesture, (10, 50), 
                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
             
             if results.multi_hand_landmarks:
