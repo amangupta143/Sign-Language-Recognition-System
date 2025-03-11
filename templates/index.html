@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link
       rel="icon"
       type="image/x-icon"
@@ -13,580 +13,923 @@
       type="image/x-icon"
       href="{{ url_for('static', filename='favicon.svg') }}"
     />
-    <title>Sign Language Recognition</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-    />
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>SignLang - Sign Language Gesture Recognition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <style>
-      :root {
-        --primary: #ffffff;
-        --secondary: #f8fafc;
-        --accent: #3b82f6;
-        --accent-light: #60a5fa;
-        --text: #0f172a;
-        --text-muted: #64748b;
-        --gradient: linear-gradient(135deg, #3b82f6, #60a5fa);
-        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-          0 2px 4px -2px rgb(0 0 0 / 0.1);
-      }
-
-      /* ::-webkit-scrollbar {
-        display: none;
-        width: 0;
-        background: transparent;
-      } */
-
-      body {
-        background-color: var(--primary);
-        color: var(--text);
-        font-family: "Inter", sans-serif;
-        line-height: 1.6;
-        overflow-x: hidden;
-        width: 100%;
-        position: relative;
-      }
-
-      /* Animated Background */
-      .animated-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
-        z-index: -1;
-        background: var(--primary);
-        overflow: hidden;
-      }
-
-      .animated-background::before {
-        content: "";
-        position: absolute;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(
-          circle,
-          var(--accent-light) 10%,
-          transparent 10%
-        );
-        background-size: 25px 25px;
-        opacity: 0.05;
-        animation: backgroundMove 60s linear infinite;
-        transform-origin: 0 0;
-      }
-
-      @keyframes backgroundMove {
-        0% {
-          transform: translate(0, 0);
+        :root {
+            --primary: #6C63FF;
+            --secondary: #4D44B5;
+            --accent: #FF6584;
+            --background: #F9FAFC;
+            --dark: #2E2E48;
+            --light: #ffffff;
+            --gray: #8A8AA3;
         }
-        100% {
-          transform: translate(-50%, -50%);
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
-      }
 
-      /* Container Styles */
-      .container {
-        max-width: 100%;
-        overflow-x: hidden;
-        padding-left: 8rem !important;
-        padding-right: 8rem !important;
-      }
-
-      /* Add a media query for smaller screens */
-      @media (max-width: 768px) {
-        .container {
-          padding-left: 1.5rem !important;
-          padding-right: 1.5rem !important;
+        body {
+            background-color: var(--background);
+            color: var(--dark);
+            overflow-x: hidden;
         }
-      }
 
-      .main-wrapper {
-        position: relative;
-        width: 100%;
-        overflow-x: hidden;
-      }
-
-      /* Navbar Styles */
-      .navbar {
-        background-color: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
-        padding: 1rem 2rem;
-        position: fixed;
-        width: 100%;
-        z-index: 1000;
-        transition: all 0.3s ease;
-        box-shadow: var(--shadow);
-      }
-
-      .navbar.scrolled {
-        padding: 0.5rem 2rem;
-        background-color: rgba(255, 255, 255, 0.95);
-      }
-
-      .nav-link {
-        color: var(--text) !important;
-        margin: 0 1rem;
-        font-weight: 500;
-        position: relative;
-        transition: all 0.3s;
-      }
-
-      .nav-link::after {
-        content: "";
-        position: absolute;
-        width: 0;
-        height: 2px;
-        bottom: -2px;
-        left: 0;
-        background: var(--gradient);
-        transition: width 0.3s ease;
-      }
-
-      .nav-link:hover::after {
-        width: 100%;
-      }
-
-      .custom-toggler {
-        border: 2px solid var(--accent) !important;
-        padding: 4px 6px;
-      }
-
-      .custom-toggler .navbar-toggler-icon {
-        background-image: none;
-        position: relative;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before,
-      .custom-toggler .navbar-toggler-icon::after,
-      .custom-toggler .navbar-toggler-icon {
-        width: 24px;
-        height: 2px;
-        background-color: var(--accent);
-        display: inline-block;
-        transition: all 0.3s ease;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before,
-      .custom-toggler .navbar-toggler-icon::after {
-        content: "";
-        position: absolute;
-        left: 0;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before {
-        top: -8px;
-      }
-
-      .custom-toggler .navbar-toggler-icon::after {
-        bottom: -8px;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon {
-        background-color: transparent;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::before {
-        transform: rotate(45deg);
-        top: 0;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::after {
-        transform: rotate(-45deg);
-        bottom: 0;
-      }
-
-      .custom-toggler:focus {
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
-      }
-      /* Hero Section */
-      .hero-section {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        position: relative;
-        padding: 6rem 0 4rem;
-        overflow: hidden;
-      }
-
-      .hero-section .col-lg-6 {
-        padding-top: 2rem;
-      }
-
-      .hero-section::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(
-          circle at 50% 50%,
-          var(--accent) 0%,
-          transparent 50%
-        );
-        opacity: 0.1;
-        animation: pulseGradient 8s ease-in-out infinite;
-      }
-
-      @keyframes pulseGradient {
-        0% {
-          transform: scale(0.95);
-          opacity: 0.1;
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
         }
-        50% {
-          transform: scale(1);
-          opacity: 0.15;
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
-        100% {
-          transform: scale(0.95);
-          opacity: 0.1;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-      }
 
-      .hero-title {
-        font-size: 4rem;
-        margin-bottom: 1.5rem;
-        font-weight: 700;
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        line-height: 1.2;
-      }
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 8%;
+            background-color: var(--light);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
 
-      .hero-subtitle {
-        font-size: 1.5rem;
-        margin-bottom: 2rem;
-        color: var(--text-muted);
-        font-weight: 400;
-      }
+        nav.scrolled {
+            padding: 1rem 8%;
+        }
 
-      /* Button Styles */
-      .custom-btn {
-        background: var(--gradient);
-        color: white;
-        padding: 1rem 2.5rem;
-        border: none;
-        border-radius: 50px;
-        font-size: 1.1rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        position: relative;
-        overflow: hidden;
-      }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
 
-      .custom-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-        color: white;
-      }
+        .logo svg {
+            height: 2rem;
+            width: 2rem;
+        }
 
-      .custom-btn::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.2),
-          transparent
-        );
-        transform: translateX(-100%);
-        transition: transform 0.6s ease;
-      }
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
 
-      .custom-btn:hover::before {
-        transform: translateX(100%);
-      }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
 
-      /* Section Styles */
-      .section {
-        padding: 8rem 0;
-        position: relative;
-      }
+        .nav-links a:hover {
+            color: var(--primary);
+        }
 
-      .section .col-lg-4 {
-        margin-bottom: 1rem;
-        padding: 0 0.5rem;
-      }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
 
-      .section-dark {
-        background-color: var(--secondary);
-      }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
 
-      .section-title {
-        text-align: center;
-        margin-bottom: 4rem;
-        font-size: 2.5rem;
-        font-weight: 700;
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
+        .cta-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-      /* Feature Cards */
-      .text-gradient {
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
+        .cta-btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(108, 99, 255, 0.2);
+        }
 
-      .text-accent {
-        color: var(--accent);
-      }
+        /* Mobile Nav */
+        .mobile-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
 
-      .feature-icon-wrapper,
-      .vision-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: var(--secondary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-      }
+        .mobile-nav-toggle:hover {
+            color: var(--primary);
+        }
 
-      .vision-card,
-      .tech-card {
-        height: 100%;
-        transition: transform 0.3s ease;
-      }
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            padding-top: 80px;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(255, 101, 132, 0.1) 100%);
+            position: relative;
+            overflow: hidden;
+        }
 
-      .vision-card:hover,
-      .tech-card:hover {
-        transform: translateY(-5px);
-      }
+        .hero-content {
+            width: 50%;
+            animation: fadeIn 1s ease-out;
+        }
 
-      .tech-item {
-        transition: all 0.3s ease;
-      }
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
 
-      .tech-item:hover {
-        background: var(--gradient) !important;
-        color: white;
-      }
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--gray);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
 
-      .tech-item:hover i,
-      .tech-item:hover p {
-        color: white !important;
-      }
+        .hero-btns {
+            display: flex;
+            gap: 1rem;
+        }
 
-      .tech-item i {
-        font-size: 2rem;
-        transition: color 0.3s ease;
-      }
+        .hero-img {
+            position: absolute;
+            right: 8%;
+            width: 45%;
+            animation: float 6s ease-in-out infinite;
+        }
 
-      .about-content,
-      .vision-card,
-      .tech-card {
-        border: 1px solid rgba(59, 130, 246, 0.1);
-      }
+        .floating-hand {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-color: var(--primary);
+            opacity: 0.1;
+            border-radius: 50%;
+            z-index: -1;
+        }
 
-      .feature-item {
-        transition: transform 0.3s ease;
-      }
+        /* About Section */
+        .about {
+            padding: 8rem 8%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
 
-      .feature-item:hover {
-        transform: translateX(10px);
-      }
+        .about h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
 
-      /* Team Cards */
+        .about p {
+            max-width: 700px;
+            margin-bottom: 3rem;
+            line-height: 1.8;
+            color: var(--gray);
+        }
 
-      .team-card {
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid rgba(59, 130, 246, 0.1);
-        border-radius: 20px;
-        padding: 2.5rem;
-        transition: all 0.3s ease;
-        height: 100%;
-        backdrop-filter: blur(10px);
-        box-shadow: var(--shadow);
-      }
+        .about-cards {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
 
-      .team-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        border-color: var(--accent);
-      }
+        .about-card {
+            background-color: var(--light);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            width: 300px;
+            transition: all 0.3s ease;
+        }
 
-      .team-image {
-        width: 150px;
-        height: 150px;
-        border-radius: 50%;
-        margin: 0 auto 1.5rem;
-        background: var(--gradient);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-      }
+        .about-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+        }
 
-      .team-card:hover .team-image {
-        transform: scale(1.05);
-      }
+        .about-card-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 1.5rem;
+            color: white;
+            font-size: 1.5rem;
+        }
 
-      .team-image i {
-        font-size: 4rem;
-        color: #ffffff;
-      }
+        .about-card h3 {
+            margin-bottom: 1rem;
+        }
 
-      /* Statistics Section */
-      .stat-card {
-        text-align: center;
-        padding: 2rem;
-        position: relative;
-      }
+        .about-card p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
 
-      .stat-number {
-        font-size: 3.5rem;
-        font-weight: 700;
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
+        /* Features Section */
+        .features {
+            padding: 8rem 8%;
+            background-color: var(--light);
+            position: relative;
+            overflow: hidden;
+        }
 
-      .stat-label {
-        color: var(--text-muted);
-        font-size: 1.2rem;
-        font-weight: 500;
-      }
+        .features-header {
+            text-align: center;
+            margin-bottom: 5rem;
+        }
 
-      /* Social Links */
-      .social-links a {
-        color: var(--text-muted);
-        margin: 0 15px;
-        font-size: 1.5rem;
-        transition: all 0.3s ease;
-      }
+        .features-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
 
-      .social-links a:hover {
-        color: var(--accent);
-        transform: translateY(-3px);
-      }
+        .features-header p {
+            max-width: 700px;
+            margin: 0 auto;
+            color: var(--gray);
+        }
 
-      /* Footer */
-      .footer {
-        padding-top: 2rem;
-        background-color: var(--secondary);
-        border-top: 1px solid rgba(59, 130, 246, 0.1);
-      }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
 
-      .footer::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 1px;
-        background: var(--gradient);
-      }
+        .feature-item {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--background);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
 
-      .footer-text {
-        color: var(--text-muted);
-      }
+        .feature-item:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+        }
 
-      /* Scroll to Top Button */
-      .scroll-top {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 50px;
-        height: 50px;
-        background: var(--gradient);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--secondary);
-        font-size: 1.5rem;
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 999;
-      }
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(108, 99, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
 
-      .scroll-top.visible {
-        opacity: 1;
-        visibility: visible;
-      }
+        .feature-item h3 {
+            margin-bottom: 1rem;
+        }
 
-      .scroll-top:hover {
-        transform: translateY(-5px);
-      }
+        .feature-item p {
+            color: var(--gray);
+            margin-top: auto;
+        }
+
+        /* Team Section */
+        /* .team {
+            padding: 8rem 8%;
+            text-align: center;
+        }
+
+        .team-header {
+            margin-bottom: 5rem;
+        }
+
+        .team-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-header p {
+            max-width: 700px;
+            margin: 0 auto;
+            color: var(--gray);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .team-member {
+            background-color: var(--light);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .team-member:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+        }
+
+        .team-member-img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+
+        .team-member:hover .team-member-img {
+            transform: scale(1.05);
+        }
+
+        .team-member-info {
+            padding: 1.5rem;
+        }
+
+        .team-member-info h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .team-member-info p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .team-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(108, 99, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .team-social a:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        } */
+
+        .team {
+            padding: 8rem 8%;
+            text-align: center;
+        }
+
+        .team-header {
+            margin-bottom: 5rem;
+        }
+
+        .team-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-header p {
+            max-width: 700px;
+            margin: 0 auto;
+            color: var(--gray);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .team-member {
+            background-color: var(--light);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .team-member:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+        }
+
+        .team-member-icon {
+            padding: 2.5rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 180px;
+            background-color: rgba(108, 99, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .team-member-icon i {
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .team-member:hover .team-member-icon {
+            background-color: rgba(108, 99, 255, 0.1);
+        }
+
+        .team-member:hover .team-member-icon i {
+            transform: scale(1.1);
+        }
+
+        .team-member-info {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .team-member-info h3 {
+            margin-bottom: 0.5rem;
+        }
+
+        .team-member-info p {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: auto;
+        }
+
+        .team-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(108, 99, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .team-social a:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Contact Section */
+        .contact {
+            padding: 8rem 8%;
+            background: linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(255, 101, 132, 0.1) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .contact-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-info p {
+            color: var(--gray);
+            margin-bottom: 2rem;
+            max-width: 500px;
+        }
+
+        .contact-card {
+            background-color: var(--light);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(108, 99, 255, 0.1);
+        }
+
+        .contact-card-icon {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(108, 99, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .contact-card-info h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .contact-card-info p {
+            margin-bottom: 0;
+            font-size: 0.9rem;
+        }
+
+        .contact-form {
+            flex: 1;
+            min-width: 300px;
+            background-color: var(--light);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 5rem 8% 2rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-logo {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .footer-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .footer-info p {
+            color: #a2a2b9;
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .footer-social a:hover {
+            background-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4rem;
+        }
+
+        .footer-link-group h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-link-group ul {
+            list-style: none;
+        }
+
+        .footer-link-group ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-link-group ul li a {
+            color: #a2a2b9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link-group ul li a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-bottom p {
+            color: #a2a2b9;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-bottom-links a {
+            color: #a2a2b9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-bottom-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                width: 60%;
+            }
+
+            .hero-img {
+                width: 40%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 1.5rem 5%;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                height: 100vh;
+                background-color: var(--light);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: right 0.5s ease;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            .nav-links.active {
+                right: 0;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                z-index: 1001;
+            }
+            
+            .mobile-nav-close {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+
+            .hero {
+                flex-direction: column;
+                padding: 0 5%;
+                padding-top: 100px;
+                text-align: center;
+            }
+
+            .hero-content {
+                width: 100%;
+                margin-bottom: 3rem;
+            }
+
+            .hero-btns {
+                justify-content: center;
+            }
+
+            .hero-img {
+                position: relative;
+                right: 0;
+                width: 100%;
+                margin-top: 1rem;
+            }
+
+            .about, .features, .team, .contact {
+                padding: 5rem 5%;
+            }
+
+            .contact-container {
+                flex-direction: column;
+            }
+
+            .contact-info, .contact-form {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .nav-links {
+                width: 100%;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+                padding-top: 4rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .footer-links {
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-bottom-links {
+                justify-content: center;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <div class="main-wrapper">
-      <!-- Animated Background -->
-      <div class="animated-background"></div>
-      <!-- Navigation -->
-      <nav class="navbar navbar-expand-lg">
-        <div class="container">
-          <a class="navbar-brand" href="#"
-            ><i class="fas fa-hands me-2"></i>SignLang AI</a
-          >
-          <button
-            class="navbar-toggler custom-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarNav"
-          >
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item">
-                <a class="nav-link" href="#home">Home</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#about">About</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#features">Features</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#team">Team</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#contact">Contact</a>
-              </li>
-            </ul>
-          </div>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav id="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 6.75C21 9.5 18.75 11.25 16.5 11.25C14.25 11.25 12 9.5 12 6.75C12 4 14.25 2.25 16.5 2.25C18.75 2.25 21 4 21 6.75Z" fill="#6C63FF"/>
+                <path d="M3 17.25C3 14.5 5.25 12.75 7.5 12.75C9.75 12.75 12 14.5 12 17.25C12 20 9.75 21.75 7.5 21.75C5.25 21.75 3 20 3 17.25Z" fill="#6C63FF"/>
+                <path d="M16.5 21.75C16.0857 21.75 15.75 21.4143 15.75 21V16.5C15.75 16.0858 16.0857 15.75 16.5 15.75C16.9143 15.75 17.25 16.0858 17.25 16.5V21C17.25 21.4143 16.9143 21.75 16.5 21.75Z" fill="#6C63FF"/>
+                <path d="M7.5 8.25C7.0857 8.25 6.75 7.91421 6.75 7.5V3C6.75 2.58579 7.0857 2.25 7.5 2.25C7.9143 2.25 8.25 2.58579 8.25 3V7.5C8.25 7.91421 7.9143 8.25 7.5 8.25Z" fill="#6C63FF"/>
+            </svg>
+            <span>SignLang</span>
         </div>
-      </nav>
+        <div class="nav-links">
+            <a href="#hero">Home</a>
+            <a href="#about">About</a>
+            <a href="#features">Features</a>
+            <a href="#team">Team</a>
+            <a href="#contact">Contact</a>
+            <button class="mobile-nav-toggle mobile-nav-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <a href="./detect">
+            <button class="cta-btn">Get Started</button>
+        </a>
+        <button class="mobile-nav-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
 
-      <!-- Hero Section -->
-      <section class="hero-section" id="home">
-        <div class="container">
-          <div class="row align-items-center">
-            <div class="col-lg-6" data-aos="fade-right">
-              <h1 class="hero-title">Sign Language Recognition</h1>
-              <p class="hero-subtitle">
-                Breaking communication barriers through artificial intelligence
-              </p>
-              <a href="{{ url_for('detect') }}" class="btn custom-btn">
-                Start Detection
-                <i class="fas fa-arrow-right ms-2"></i>
-              </a>
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <h1>Sign Language Recognition Made Simple</h1>
+            <p>SignLang uses advanced computer vision to recognize hand gestures and translate them in real-time. Break down communication barriers and connect with everyone.</p>
+            <div class="hero-btns">
+                <a href="./detect">
+                    <button class="cta-btn">Try It Now</button>
+                </a>                  
+                <button class="cta-btn" style="background-color: transparent; color: var(--primary); border: 2px solid var(--primary);">Learn More</button>
             </div>
-            <div class="col-lg-6" data-aos="fade-left">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+        </div>
+        <div class="hero-img">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
                 <!-- Background Elements -->
                 <defs>
                   <linearGradient
@@ -598,21 +941,21 @@
                   >
                     <stop
                       offset="0%"
-                      style="stop-color: #3b82f6; stop-opacity: 0.2"
+                      style="stop-color: #4D44B5; stop-opacity: 0.2"
                     />
                     <stop
                       offset="100%"
-                      style="stop-color: #60a5fa; stop-opacity: 0.1"
+                      style="stop-color: #6C63FF; stop-opacity: 0.1"
                     />
                   </linearGradient>
                   <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop
                       offset="0%"
-                      style="stop-color: #3b82f6; stop-opacity: 1"
+                      style="stop-color: #4D44B5; stop-opacity: 1"
                     />
                     <stop
                       offset="100%"
-                      style="stop-color: #60a5fa; stop-opacity: 1"
+                      style="stop-color: #6C63FF; stop-opacity: 1"
                     />
                   </linearGradient>
                   <linearGradient
@@ -622,8 +965,8 @@
                     x2="100%"
                     y2="100%"
                   >
-                    <stop offset="0%" style="stop-color: #3b82f6" />
-                    <stop offset="100%" style="stop-color: #60a5fa" />
+                    <stop offset="0%" style="stop-color: #4D44B5" />
+                    <stop offset="100%" style="stop-color: #6C63FF" />
                   </linearGradient>
                   <linearGradient
                     id="detectionGrad"
@@ -634,11 +977,11 @@
                   >
                     <stop
                       offset="0%"
-                      style="stop-color: #60a5fa; stop-opacity: 0.3"
+                      style="stop-color: #6C63FF; stop-opacity: 0.3"
                     />
                     <stop
                       offset="100%"
-                      style="stop-color: #3b82f6; stop-opacity: 0.3"
+                      style="stop-color: #4D44B5; stop-opacity: 0.3"
                     />
                   </linearGradient>
                 </defs>
@@ -714,7 +1057,7 @@
                 <path
                   d="M290 210 L290 190 L310 190"
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#4D44B5"
                   stroke-width="2"
                 >
                   <animate
@@ -733,7 +1076,7 @@
                 <path
                   d="M510 210 L510 190 L490 190"
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#4D44B5"
                   stroke-width="2"
                 >
                   <animate
@@ -752,7 +1095,7 @@
                 <path
                   d="M290 390 L290 410 L310 410"
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#4D44B5"
                   stroke-width="2"
                 >
                   <animate
@@ -771,7 +1114,7 @@
                 <path
                   d="M510 390 L510 410 L490 410"
                   fill="none"
-                  stroke="#3b82f6"
+                  stroke="#4D44B5"
                   stroke-width="2"
                 >
                   <animate
@@ -937,7 +1280,7 @@
                 </g>
                 <g>
                   <!-- Large outer floating particles -->
-                  <circle cx="250" cy="200" r="4" fill="#3b82f6">
+                  <circle cx="250" cy="200" r="4" fill="#4D44B5">
                     <animate
                       attributeName="cx"
                       values="250;200;250"
@@ -964,7 +1307,7 @@
                     />
                   </circle>
 
-                  <circle cx="550" cy="200" r="5" fill="#60a5fa">
+                  <circle cx="550" cy="200" r="5" fill="#6C63FF">
                     <animate
                       attributeName="cx"
                       values="550;600;550"
@@ -991,7 +1334,7 @@
                     />
                   </circle>
 
-                  <circle cx="400" cy="150" r="6" fill="#3b82f6">
+                  <circle cx="400" cy="150" r="6" fill="#4D44B5">
                     <animate
                       attributeName="cy"
                       values="150;100;150"
@@ -1012,7 +1355,7 @@
                     />
                   </circle>
 
-                  <circle cx="400" cy="450" r="5" fill="#60a5fa">
+                  <circle cx="400" cy="450" r="5" fill="#6C63FF">
                     <animate
                       attributeName="cy"
                       values="450;500;450"
@@ -1033,7 +1376,7 @@
                     />
                   </circle>
 
-                  <circle cx="250" cy="400" r="4" fill="#3b82f6">
+                  <circle cx="250" cy="400" r="4" fill="#4D44B5">
                     <animate
                       attributeName="cx"
                       values="250;200;250"
@@ -1060,7 +1403,7 @@
                     />
                   </circle>
 
-                  <circle cx="550" cy="400" r="5" fill="#60a5fa">
+                  <circle cx="550" cy="400" r="5" fill="#6C63FF">
                     <animate
                       attributeName="cx"
                       values="550;600;550"
@@ -1088,544 +1431,472 @@
                   </circle>
                 </g>
               </svg>
-            </div>
-          </div>
         </div>
-      </section>
+        
+        <!-- Background animations -->
+        <div class="floating-hand" style="top: 20%; left: 15%; animation: float 7s ease-in-out infinite;"></div>
+        <div class="floating-hand" style="top: 65%; left: 90%; animation: float 9s ease-in-out infinite; animation-delay: 1s;"></div>
+        <div class="floating-hand" style="top: 85%; left: 3%; animation: float 8s ease-in-out infinite; animation-delay: 2s;"></div>
+        <div class="floating-hand" style="top: 15%; left: 80%; animation: float 6s ease-in-out infinite; animation-delay: 3s;"></div>
+    </section>
 
-      <!-- About Section -->
-      <section class="section section-dark" id="about">
-        <div class="container">
-          <h2 class="section-title" data-aos="fade-up">About Our Project</h2>
-          <div class="row g-4">
-            <!-- Main Content Column -->
-            <div class="col-lg-6" data-aos="fade-right">
-              <div class="about-content p-4 bg-white rounded-3 shadow-sm h-100">
-                <h3 class="mb-4 text-gradient">
-                  Making Communication Accessible
-                </h3>
-                <p class="mb-4 text-muted">
-                  Our sign language recognition system uses state-of-the-art
-                  machine learning algorithms to bridge the communication gap
-                  between the deaf community and hearing individuals. By
-                  leveraging computer vision and deep learning, we provide
-                  real-time sign language interpretation.
-                </p>
-                <div class="feature-grid">
-                  <div class="feature-item mb-4">
-                    <div class="d-flex align-items-center">
-                      <div class="feature-icon-wrapper me-3">
-                        <i class="fas fa-clock text-accent"></i>
-                      </div>
-                      <div>
-                        <h4 class="h5 mb-2">Real-time Detection</h4>
-                        <p class="text-muted mb-0">
-                          Instant recognition with minimal latency
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="feature-item mb-4">
-                    <div class="d-flex align-items-center">
-                      <div class="feature-icon-wrapper me-3">
-                        <i class="fas fa-chart-line text-accent"></i>
-                      </div>
-                      <div>
-                        <h4 class="h5 mb-2">High Accuracy</h4>
-                        <p class="text-muted mb-0">
-                          98% accurate gesture recognition
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="feature-item mb-4">
-                    <div class="d-flex align-items-center">
-                      <div class="feature-icon-wrapper me-3">
-                        <i class="fas fa-mobile-alt text-accent"></i>
-                      </div>
-                      <div>
-                        <h4 class="h5 mb-2">Cross-Platform</h4>
-                        <p class="text-muted mb-0">
-                          Works on all major devices
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="feature-item">
-                    <div class="d-flex align-items-center">
-                      <div class="feature-icon-wrapper me-3">
-                        <i class="fas fa-brain text-accent"></i>
-                      </div>
-                      <div>
-                        <h4 class="h5 mb-2">AI-Powered</h4>
-                        <p class="text-muted mb-0">Advanced ML algorithms</p>
-                      </div>
-                    </div>
-                  </div>
+    <!-- About Section -->
+    <section id="about" class="about">
+        <h2>About SignLang</h2>
+        <p>SignLang is a cutting-edge application designed to bridge communication gaps through technology. Our mission is to make sign language accessible to everyone, empowering both the deaf community and those who want to learn sign language.</p>
+        
+        <div class="about-cards">
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-eye"></i>
                 </div>
-              </div>
+                <h3>Our Vision</h3>
+                <p>We envision a world where communication barriers no longer exist, and everyone can express themselves freely regardless of their abilities.</p>
             </div>
-
-            <!-- Vision & Mission Column -->
-            <div class="col-lg-6" data-aos="fade-left">
-              <div class="row g-4">
-                <!-- Vision Card -->
-                <div class="col-12">
-                  <div class="vision-card p-4 bg-white rounded-3 shadow-sm">
-                    <div class="d-flex align-items-center mb-3">
-                      <div class="vision-icon-wrapper me-3">
-                        <i class="fas fa-eye text-accent"></i>
-                      </div>
-                      <h3 class="h4 mb-0">Our Vision</h3>
-                    </div>
-                    <p class="text-muted mb-0">
-                      To create a world where communication barriers no longer
-                      exist, enabling seamless interaction between deaf and
-                      hearing communities through innovative technology.
-                    </p>
-                  </div>
+            
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-bullseye"></i>
                 </div>
-
-                <!-- Technology Stack Card -->
-                <div class="col-12">
-                  <div class="tech-card p-4 bg-white rounded-3 shadow-sm">
-                    <h3 class="h4 mb-4">Technology Stack</h3>
-                    <div class="row g-3">
-                      <div class="col-6">
-                        <div
-                          class="tech-item text-center p-3 rounded-3 bg-light"
-                        >
-                          <i class="fab fa-python mb-2 text-accent"></i>
-                          <p class="mb-0">Python</p>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div
-                          class="tech-item text-center p-3 rounded-3 bg-light"
-                        >
-                          <i class="fas fa-brain mb-2 text-accent"></i>
-                          <p class="mb-0">TensorFlow</p>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div
-                          class="tech-item text-center p-3 rounded-3 bg-light"
-                        >
-                          <i class="fas fa-camera mb-2 text-accent"></i>
-                          <p class="mb-0">OpenCV</p>
-                        </div>
-                      </div>
-                      <div class="col-6">
-                        <div
-                          class="tech-item text-center p-3 rounded-3 bg-light"
-                        >
-                          <i class="fas fa-server mb-2 text-accent"></i>
-                          <p class="mb-0">Flask</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                <h3>Our Mission</h3>
+                <p>To leverage advanced technology to make sign language interpretation accessible anywhere, anytime, for anyone who needs it.</p>
             </div>
-          </div>
+            
+            <div class="about-card">
+                <div class="about-card-icon">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <h3>Our Technology</h3>
+                <p>Powered by advanced machine learning and computer vision, our application can accurately detect and interpret hand gestures in real-time.</p>
+            </div>
         </div>
-      </section>
+    </section>
 
-      <!-- Features Section -->
-      <section class="section" id="features">
-        <div class="container">
-          <h2 class="section-title" data-aos="fade-up">Key Features</h2>
-          <div class="row">
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-              <div class="feature-card text-center">
-                <i class="fas fa-clock feature-icon text-accent"></i>
-                <h3>Real-Time Processing</h3>
-                <p>
-                  Instant recognition and translation of sign language gestures
-                  with minimal latency.
-                </p>
-              </div>
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="features-header">
+            <h2>Key Features</h2>
+            <p>Discover what makes SignLang the ultimate tool for sign language recognition and learning.</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Real-time Recognition</h3>
+                <p>Instantly recognize and translate sign language gestures with our lightning-fast processing technology.</p>
             </div>
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
-              <div class="feature-card text-center">
-                <i class="fas fa-brain feature-icon text-accent"></i>
-                <h3>AI-Powered</h3>
-                <p>
-                  Advanced machine learning algorithms ensure high accuracy in
-                  gesture recognition.
-                </p>
-              </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>High Accuracy</h3>
+                <p>Our advanced algorithms ensure precise recognition of gestures, minimizing errors and misinterpretations.</p>
             </div>
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
-              <div class="feature-card text-center">
-                <i class="fas fa-mobile-alt feature-icon text-accent"></i>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-globe"></i>
+                </div>
+                <h3>Multilingual Support</h3>
+                <p>Translate sign language to multiple spoken languages, breaking down barriers across cultures and regions.</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h3>Interactive Learning</h3>
+                <p>Learn sign language with interactive tutorials that provide real-time feedback on your gestures.</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
                 <h3>Cross-Platform</h3>
-                <p>Works seamlessly across different devices and platforms.</p>
-              </div>
+                <p>Use SignLang on any device - mobile, tablet, or desktop - with seamless synchronization across all platforms.</p>
             </div>
-          </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Community Support</h3>
+                <p>Join our growing community of sign language users and learners to share experiences and knowledge.</p>
+            </div>
         </div>
-      </section>
+    </section>
 
-      <!-- Statistics Section -->
-      <section class="section section-dark">
-        <div class="container">
-          <div class="row">
-            <div class="col-md-3" data-aos="fade-up">
-              <div class="stat-card">
-                <div class="stat-number">98%</div>
-                <div class="stat-label">Accuracy Rate</div>
-              </div>
-            </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
-              <div class="stat-card">
-                <div class="stat-number">15+</div>
-                <div class="stat-label">Supported Gestures</div>
-              </div>
-            </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
-              <div class="stat-card">
-                <div class="stat-number">50ms</div>
-                <div class="stat-label">Response Time</div>
-              </div>
-            </div>
-            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
-              <div class="stat-card">
-                <div class="stat-number">1000+</div>
-                <div class="stat-label">Daily Users</div>
-              </div>
-            </div>
-          </div>
+    <!-- Team Section -->
+    <!-- <section id="team" class="team">
+        <div class="team-header">
+            <h2>Meet Our Team</h2>
+            <p>The passionate individuals behind SignLang who are dedicated to making communication accessible for everyone.</p>
         </div>
-      </section>
-
-      <!-- Team Section -->
-      <section class="section team-section" id="team">
-        <div class="container">
-          <h2 class="section-title" data-aos="fade-up">Meet Our Team</h2>
-          <div class="row">
-            <!-- Professor -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <!-- <i class="fas fa-chalkboard-teacher"></i> -->
-                  <img src="https://cse.kiit.ac.in/wp-content/uploads/2019/01/Arup-Sarkar.jpg" alt="About Project" class="img-fluid rounded-3">
+        
+        <div class="team-grid">
+            <div class="team-member">
+                <img src="https://github.com/user-attachments/assets/6c18faae-c49d-4e36-acaa-18263a2db3e3" alt="Sarah Johnson" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Arup Sarkar</h3>
+                    <p>Project Guide</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Arup Sarkar</h3>
-                <p class="team-role">Project Guide</p>
-                <p class="team-desc">
-                  Blockchain and Machine Learning expert with extensive academic
-                  experience.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://linkedin.com" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-
-            <!-- ML Engineer -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <i class="fas fa-brain"></i>
-                  <!-- <img src="https://avatars.githubusercontent.com/u/109453339?v=4" alt="About Project" class="img-fluid rounded-3"> -->
+            
+            <div class="team-member">
+                <img src="https://github.com/user-attachments/assets/b2f3fdbd-5c6c-417f-b582-734c439d9106" alt="Michael Chen" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Aman Gupta</h3>
+                    <p>ML Engineer & Lead Developer</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Aman Gupta</h3>
-                <p class="team-role">Machine Learning Engineer</p>
-                <p class="team-desc">
-                  Specialized in computer vision and deep learning models for
-                  gesture recognition.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com/amangupta143" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://linkedin.com/in/amangupta143" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-
-            <!-- Full Stack Developer -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <i class="fas fa-code"></i>
+            
+            <div class="team-member">
+                <img src="https://www.realtechnirman.com/wp-content/uploads/2017/02/man-dummy.jpg" alt="Amara Patel" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Shakshi</h3>
+                    <p>Full Stack Developer</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Shakshi</h3>
-                <p class="team-role">Full Stack Developer</p>
-                <p class="team-desc">
-                  Expert in web development and real-time video processing
-                  applications.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com/Shakshi222" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://www.linkedin.com/in/shak-shi/" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-
-            <!-- Data Scientist -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="400">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <i class="fas fa-chart-line"></i>
+            
+            <div class="team-member">
+                <img src="https://www.realtechnirman.com/wp-content/uploads/2017/02/man-dummy.jpg" alt="David Rodriguez" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Tanvi Upadhyay</h3>
+                    <p>Data Scientist</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-dribbble"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Tanvi Upadhyay</h3>
-                <p class="team-role">Data Scientist</p>
-                <p class="team-desc">
-                  Focused on data analysis and model optimization for improved
-                  accuracy.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://linkedin.com" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-
-            <!-- UI/UX Designer -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="500">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <i class="fas fa-paint-brush"></i>
+            
+            <div class="team-member">
+                <img src="https://www.realtechnirman.com/wp-content/uploads/2017/02/man-dummy.jpg" alt="Olivia Jackson" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Unmesha Pradhan</h3>
+                    <p>UI/UX Designer</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-medium"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Unmesha Pradhan</h3>
-                <p class="team-role">UI/UX Designer</p>
-                <p class="team-desc">
-                  Creating intuitive and accessible interfaces for seamless user
-                  experience.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com/UnmeshaPradhan" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://www.linkedin.com/in/unmesha-pradhan" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-
-            <!-- Project Manager -->
-            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="600">
-              <div class="team-card text-center">
-                <div class="team-image">
-                  <i class="fas fa-tasks"></i>
+            
+            <div class="team-member">
+                <img src="https://www.realtechnirman.com/wp-content/uploads/2017/02/man-dummy.jpg" alt="Jamal Wilson" class="team-member-img">
+                <div class="team-member-info">
+                    <h3>Aditya Raj</h3>
+                    <p>Project Manager</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
                 </div>
-                <h3 class="team-name">Aditya Raj</h3>
-                <p class="team-role">Project Manager</p>
-                <p class="team-desc">
-                  Coordinating team efforts and ensuring project milestones are
-                  met.
-                </p>
-                <div class="social-links">
-                  <a href="https://github.com" target="_blank"
-                    ><i class="fab fa-github"></i
-                  ></a>
-                  <a href="https://linkedin.com" target="_blank"
-                    ><i class="fab fa-linkedin"></i
-                  ></a>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
-      </section>
+    </section> -->
 
-      <!-- Contact Section -->
-      <section class="section section-dark" id="contact">
-        <div class="container">
-          <h2 class="section-title" data-aos="fade-up">Get in Touch</h2>
-          <div class="row justify-content-center">
-            <div class="col-lg-6" data-aos="fade-up">
-              <div class="text-center">
-                <p class="mb-4">
-                  Have questions about our project? We'd love to hear from you!
-                </p>
-                <div class="d-flex justify-content-center gap-4">
-                  <a href="mailto:contact@signlang.ai" class="btn custom-btn">
-                    <i class="fas fa-envelope me-2"></i>Email Us
-                  </a>
-                  <a
-                    href="https://github.com/signlang-ai"
-                    class="btn custom-btn"
-                  >
-                    <i class="fab fa-github me-2"></i>GitHub
-                  </a>
+    <section id="team" class="team">
+        <div class="team-header">
+            <h2>Meet Our Team</h2>
+            <p>The passionate individuals behind SignLang who are dedicated to making communication accessible for everyone.</p>
+        </div>
+        
+        <div class="team-grid">
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-user-tie fa-4x"></i>
                 </div>
-              </div>
+                <div class="team-member-info">
+                    <h3>Arup Sarkar</h3>
+                    <p>Project Guide</p>
+                    <p>Blockchain and Machine Learning expert with extensive academic experience.</p> 
+                    <div class="team-social">
+                        <a href="https://scholar.google.co.in/citations?user=wUtv4b4AAAAJ&hl=en" target="_blank"><i class="fab fa-google-scholar"></i></a>
+                        <a href="https://www.linkedin.com/in/arup-sarkar-31653411" target="_blank"><i class="fab fa-linkedin"></i></a>
+                        <a href="https://x.com/ArupSarkar98"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
             </div>
-          </div>
+            
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-laptop-code fa-4x"></i>
+                </div>
+                <div class="team-member-info">
+                    <h3>Aman Gupta</h3>
+                    <p>ML Engineer & Lead Developer</p>
+                    <p>Specialized in computer vision and deep learning models for gesture recognition.</p>
+                    <div class="team-social">
+                        <a href="https://linkedin.com/in/amangupta143"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://github.com/amangupta143"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-code fa-4x"></i>
+                </div>
+                <div class="team-member-info">
+                    <h3>Shakshi</h3>
+                    <p>Full Stack Developer</p>
+                    <p>Expert in web development and real-time video processing applications.</p>
+                    <div class="team-social">
+                        <a href="https://www.linkedin.com/in/shak-shi/"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://github.com/Shakshi222"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-database fa-4x"></i>
+                </div>
+                <div class="team-member-info">
+                    <h3>Tanvi Upadhyay</h3>
+                    <p>Data Scientist</p>
+                    <p>Focused on data analysis and model optimization for improved accuracy.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-medium"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-paint-brush fa-4x"></i>
+                </div>
+                <div class="team-member-info">
+                    <h3>Unmesha Pradhan</h3>
+                    <p>UI/UX Designer</p>
+                    <p>Creating intuitive and accessible interfaces for seamless user experience.</p>
+                    <div class="team-social">
+                        <a href="https://www.linkedin.com/in/unmesha-pradhan"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://github.com/UnmeshaPradhan"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="team-member">
+                <div class="team-member-icon">
+                    <i class="fas fa-tasks fa-4x"></i>
+                </div>
+                <div class="team-member-info">
+                    <h3>Aditya Raj</h3>
+                    <p>Project Manager</p>
+                    <p>Coordinating team efforts and ensuring project milestones are met.</p>
+                    <div class="team-social">
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+            </div>
         </div>
-      </section>
+    </section>
 
-      <div class="scroll-top">
-        <i class="fas fa-arrow-up"></i>
-      </div>
-
-      <!-- Footer -->
-      <footer class="footer">
-        <div class="container">
-          <div class="social-links mb-4">
-            <a href="#"><i class="fab fa-github"></i></a>
-            <a href="#"><i class="fab fa-linkedin"></i></a>
-            <a href="#"><i class="fab fa-twitter"></i></a>
-          </div>
-          <p class="footer-text">
-            © 2025 Sign Language Recognition Project. All rights reserved.
-          </p>
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="contact-container">
+            <div class="contact-info">
+                <h2>Get In Touch</h2>
+                <p>Curious about SignLang and its remarkable benefits? Interested in forming a partnership with us? Reach out using the contact details provided below, and we’ll get back to you shortly with all the information you need.</p>
+                
+                <div class="contact-card">
+                    <div class="contact-card-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="contact-card-info">
+                        <h3>Email</h3>
+                        <p>amangupta.main@gmail.com</p>
+                    </div>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-card-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <div class="contact-card-info">
+                        <h3>Phone</h3>
+                        <p>+91 9631002551</p>
+                    </div>
+                </div>
+                
+                <div class="contact-card">
+                    <div class="contact-card-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="contact-card-info">
+                        <h3>Location</h3>
+                        <p>KIIT University, Bhubaneswar, Odisha, India - 751024</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="contact-form">
+                <form>
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" placeholder="Your name">
+                    </div>
+                    
+                    <!-- <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" placeholder="Your email address">
+                    </div> -->
+                    
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" placeholder="Subject">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" placeholder="Your message"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="cta-btn" style="width: 100%;">Send Message</button>
+                </form>
+            </div>
         </div>
-      </footer>
-    </div>
+    </section>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-info">
+                <div class="footer-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 6.75C21 9.5 18.75 11.25 16.5 11.25C14.25 11.25 12 9.5 12 6.75C12 4 14.25 2.25 16.5 2.25C18.75 2.25 21 4 21 6.75Z" fill="#ffffff"/>
+                        <path d="M3 17.25C3 14.5 5.25 12.75 7.5 12.75C9.75 12.75 12 14.5 12 17.25C12 20 9.75 21.75 7.5 21.75C5.25 21.75 3 20 3 17.25Z" fill="#ffffff"/>
+                        <path d="M16.5 21.75C16.0857 21.75 15.75 21.4143 15.75 21V16.5C15.75 16.0858 16.0857 15.75 16.5 15.75C16.9143 15.75 17.25 16.0858 17.25 16.5V21C17.25 21.4143 16.9143 21.75 16.5 21.75Z" fill="#ffffff"/>
+                        <path d="M7.5 8.25C7.0857 8.25 6.75 7.91421 6.75 7.5V3C6.75 2.58579 7.0857 2.25 7.5 2.25C7.9143 2.25 8.25 2.58579 8.25 3V7.5C8.25 7.91421 7.9143 8.25 7.5 8.25Z" fill="#ffffff"/>
+                    </svg>
+                    SignLang
+                </div>
+                <p>SignLang is an innovative application that uses cutting-edge technology to recognize sign language gestures in real-time, bridging communication gaps and making the world more accessible.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <div class="footer-link-group">
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Our Team</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-link-group">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API</a></li>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Community</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-link-group">
+                    <h3>Legal</h3>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 SignLang. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+
     <script>
-      // Initialize AOS
-      AOS.init({
-        duration: 1000,
-        once: true,
-        offset: 100,
-        easing: "ease-out-cubic",
-      });
-
-      // Navbar scroll effect
-      window.addEventListener("scroll", function () {
-        const navbar = document.querySelector(".navbar");
-        const scrollTop = document.querySelector(".scroll-top");
-
-        if (window.scrollY > 50) {
-          navbar.classList.add("scrolled");
-          scrollTop.classList.add("visible");
-        } else {
-          navbar.classList.remove("scrolled");
-          scrollTop.classList.remove("visible");
-        }
-      });
-
-      // Scroll to top functionality
-      document.querySelector(".scroll-top").addEventListener("click", () => {
-        window.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-      });
-
-      // Smooth scrolling for navigation links
-      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-        anchor.addEventListener("click", function (e) {
-          e.preventDefault();
-          const targetId = this.getAttribute("href");
-          if (targetId === "#") return;
-
-          const targetElement = document.querySelector(targetId);
-          if (targetElement) {
-            targetElement.scrollIntoView({
-              behavior: "smooth",
-              block: "start",
+        // Mobile navigation toggle
+        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        mobileNavToggle.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
             });
-          }
-
-          // Close mobile menu if open
-          const navbarToggler = document.querySelector(".navbar-toggler");
-          const navbarCollapse = document.querySelector(".navbar-collapse");
-          if (navbarCollapse.classList.contains("show")) {
-            navbarToggler.click();
-          }
         });
-      });
-
-      // Statistics counter animation
-      const stats = document.querySelectorAll(".stat-number");
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const target = entry.target;
-              const value = target.innerText;
-              let startValue = 0;
-              const duration = 2000;
-              const increment = value.includes("%")
-                ? parseFloat(value) / (duration / 16)
-                : parseInt(value) / (duration / 16);
-
-              const counter = setInterval(() => {
-                startValue += increment;
-                if (value.includes("%")) {
-                  target.innerText = `${Math.min(
-                    startValue,
-                    parseFloat(value)
-                  ).toFixed(1)}%`;
-                  if (startValue >= parseFloat(value)) clearInterval(counter);
-                } else if (value.includes("ms")) {
-                  target.innerText = `${Math.min(
-                    Math.round(startValue),
-                    parseInt(value)
-                  )}ms`;
-                  if (startValue >= parseInt(value)) clearInterval(counter);
-                } else if (value.includes("+")) {
-                  target.innerText = `${Math.min(
-                    Math.round(startValue),
-                    parseInt(value)
-                  )}+`;
-                  if (startValue >= parseInt(value)) clearInterval(counter);
-                } else {
-                  target.innerText = Math.min(
-                    Math.round(startValue),
-                    parseInt(value)
-                  );
-                  if (startValue >= parseInt(value)) clearInterval(counter);
-                }
-              }, 16);
-
-              observer.unobserve(target);
+        
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
             }
-          });
-        },
-        {
-          threshold: 0.5,
-        }
-      );
-
-      stats.forEach((stat) => observer.observe(stat));
-
-      // Add active class to current section in navbar
-      const sections = document.querySelectorAll("section");
-      const navLinks = document.querySelectorAll(".nav-link");
-
-      window.addEventListener("scroll", () => {
-        let current = "";
-        sections.forEach((section) => {
-          const sectionTop = section.offsetTop;
-          const sectionHeight = section.clientHeight;
-          if (window.scrollY >= sectionTop - 150) {
-            current = section.getAttribute("id");
-          }
         });
-
-        navLinks.forEach((link) => {
-          link.classList.remove("active");
-          if (link.getAttribute("href").slice(1) === current) {
-            link.classList.add("active");
-          }
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    
+                    // Close mobile nav if open
+                    navLinks.classList.remove('active');
+                }
+            });
         });
-      });
+        
     </script>
-  </body>
+</body>
 </html>

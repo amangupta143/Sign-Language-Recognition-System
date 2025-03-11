@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link
       rel="icon"
       type="image/x-icon"
@@ -12,506 +13,847 @@
       type="image/x-icon"
       href="{{ url_for('static', filename='favicon.svg') }}"
     />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sign Language Detection</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>SignLang - Gesture Detection</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-      :root {
-        --primary: #ffffff;
-        --secondary: #f8fafc;
-        --accent: #3b82f6;
-        --accent-light: #60a5fa;
-        --text: #0f172a;
-        --text-muted: #64748b;
-        --gradient: linear-gradient(135deg, #3b82f6, #60a5fa);
-        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
-          0 2px 4px -2px rgb(0 0 0 / 0.1);
-      }
-
-      body {
-        font-family: "Inter", sans-serif;
-        background-color: var(--secondary);
-        color: var(--text);
-        line-height: 1.6;
-      }
-
-      .content-wrapper {
-        transition: filter 0.3s ease;
-      }
-
-      .content-wrapper.bright-mode {
-        filter: brightness(1.5);
-      }
-
-      .animated-background {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
-        background: var(--primary);
-        overflow: hidden;
-      }
-
-      .animated-background::before {
-        content: "";
-        position: absolute;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(
-          circle,
-          var(--accent-light) 10%,
-          transparent 10%
-        );
-        background-size: 25px 25px;
-        opacity: 0.05;
-        animation: backgroundMove 60s linear infinite;
-      }
-
-      @keyframes backgroundMove {
-        0% {
-          transform: translate(0, 0);
+        :root {
+            --primary: #6C63FF;
+            --secondary: #4D44B5;
+            --accent: #FF6584;
+            --background: #F9FAFC;
+            --dark: #2E2E48;
+            --light: #ffffff;
+            --gray: #8A8AA3;
+            --success: #28a745;
         }
-        100% {
-          transform: translate(-50%, -50%);
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
         }
-      }
 
-      .navbar {
-        background-color: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(10px);
-        box-shadow: var(--shadow);
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 1000;
-        height: 72px;
-        display: flex;
-        align-items: center;
-      }
-
-      .brightness-toggle {
-        background: none;
-        border: none;
-        padding: 8px;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-        color: var(--accent);
-        display: flex; /* Ensure icon stays centered */
-        align-items: center;
-        justify-content: center;
-        width: 40px; /* Fixed width */
-        height: 40px; /* Fixed height */
-      }
-
-      .brightness-toggle:hover {
-        transform: scale(1.1);
-      }
-
-      .brightness-toggle svg {
-        width: 24px;
-        height: 24px;
-      }
-
-      .custom-toggler {
-        border: 2px solid var(--accent) !important;
-        padding: 4px 6px;
-      }
-
-      .custom-toggler .navbar-toggler-icon {
-        background-image: none;
-        position: relative;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before,
-      .custom-toggler .navbar-toggler-icon::after,
-      .custom-toggler .navbar-toggler-icon {
-        width: 24px;
-        height: 2px;
-        background-color: var(--accent);
-        display: inline-block;
-        transition: all 0.3s ease;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before,
-      .custom-toggler .navbar-toggler-icon::after {
-        content: "";
-        position: absolute;
-        left: 0;
-      }
-
-      .custom-toggler .navbar-toggler-icon::before {
-        top: -8px;
-      }
-
-      .custom-toggler .navbar-toggler-icon::after {
-        bottom: -8px;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon {
-        background-color: transparent;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::before {
-        transform: rotate(45deg);
-        top: 0;
-      }
-
-      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::after {
-        transform: rotate(-45deg);
-        bottom: 0;
-      }
-
-      .custom-toggler:focus {
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
-      }
-
-      .main-container {
-        padding: 2rem;
-        margin-top: 4rem;
-      }
-
-      .title {
-        background: var(--gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-weight: 700;
-        margin-bottom: 2rem;
-      }
-
-      .card {
-        background-color: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(59, 130, 246, 0.1);
-        border-radius: 15px;
-        box-shadow: var(--shadow);
-        transition: transform 0.3s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .card-body {
-        flex-grow: 1;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .card:hover {
-        transform: translateY(-5px);
-      }
-
-      .video-section,
-      .history-section {
-        height: calc(100vh - 200px);
-        display: flex;
-        flex-direction: column;
-      }
-
-      .history-section .card {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden; /* Prevent card overflow */
-      }
-
-      .history-section .card-body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden; /* Prevent body overflow */
-      }
-
-      .video-container {
-        position: relative;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: var(--shadow);
-        flex-grow: 1;
-      }
-
-      .video-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      .btn-control {
-        background: var(--gradient);
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 50px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .btn-control:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-        color: white;
-      }
-
-      .current-time {
-        font-size: 1.2rem;
-        color: var(--accent);
-        font-weight: 500;
-        margin-bottom: 1rem;
-      }
-
-      .history-container {
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 6px; /* Account for scrollbar width */
-        margin-right: -6px; /* Offset padding */
-      }
-
-      .history-container::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .history-container::-webkit-scrollbar-track {
-        background: var(--secondary);
-      }
-
-      .history-container::-webkit-scrollbar-thumb {
-        background-color: var(--accent);
-        border-radius: 3px;
-      }
-
-      .history-entry {
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 10px;
-        border: 1px solid rgba(59, 130, 246, 0.1);
-        transition: all 0.3s ease;
-      }
-
-      .history-entry:hover {
-        transform: translateX(5px);
-        background-color: rgba(255, 255, 255, 0.95);
-      }
-
-      .controls {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1.5rem;
-      }
-
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
+        body {
+            background-color: var(--background);
+            color: var(--dark);
+            overflow-x: hidden;
         }
-        50% {
-          transform: scale(1.05);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
 
-      .recording-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        background-color: #ef4444;
-        border-radius: 50%;
-        margin-right: 0.5rem;
-        animation: pulse 2s infinite;
-      }
+        /* Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Navbar */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 8%;
+            background-color: var(--light);
+            position: fixed;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            padding: 1rem 8%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .logo svg {
+            height: 2rem;
+            width: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .cta-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-btn:hover {
+            background-color: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(108, 99, 255, 0.2);
+        }
+
+        /* Mobile Nav */
+        .mobile-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .mobile-nav-toggle:hover {
+            color: var(--primary);
+        }
+
+        /* Detection Section */
+        .detection {
+            min-height: 100vh;
+            padding: 100px 8% 50px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .detection-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .detection-title h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .detection-title p {
+            color: var(--gray);
+            max-width: 700px;
+        }
+
+        .detection-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .video-container {
+            flex: 1;
+            min-width: 320px;
+            background-color: var(--light);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            max-height: 400px;
+        }
+
+        /* @media (max-width: 768px) {
+            .video-container, .video-feed {
+                max-height: 250px;
+                min-height: 250px;
+            }
+            
+        } */
+
+        .video-feed {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            object-fit: cover;
+        }
+
+        .history-container {
+            flex: 1;
+            min-width: 320px;
+            background-color: var(--light);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            max-height: 400px;
+        }
+
+        .history-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 200px;
+            color: var(--gray);
+            text-align: center;
+        }
+
+        .history-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .instructions {
+            margin-top: 3rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .instructions h2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .gesture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gesture-card {
+            background-color: var(--light);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .gesture-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(108, 99, 255, 0.1);
+        }
+
+        .gesture-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .btn-secondary {
+            background-color: var(--background);
+            color: var(--dark);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--gray);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 5rem 8% 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-info {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .footer-logo {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .footer-info p {
+            color: #a2a2b9;
+            margin-bottom: 1.5rem;
+            max-width: 400px;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-social a {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .footer-social a:hover {
+            background-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4rem;
+        }
+
+        .footer-link-group h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .footer-link-group ul {
+            list-style: none;
+        }
+
+        .footer-link-group ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-link-group ul li a {
+            color: #a2a2b9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-link-group ul li a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-bottom p {
+            color: #a2a2b9;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .footer-bottom-links a {
+            color: #a2a2b9;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-bottom-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .detection {
+                padding: 100px 5% 50px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav {
+                padding: 1.5rem 5%;
+            }
+            
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 70%;
+                height: 100vh;
+                background-color: var(--light);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                transition: right 0.5s ease;
+                box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            }
+            
+            .nav-links.active {
+                right: 0;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                z-index: 1001;
+            }
+            
+            .mobile-nav-close {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+            }
+
+            .detection-title h1 {
+                font-size: 2rem;
+            }
+
+            .history-container {
+                min-height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .nav-links {
+                width: 100%;
+            }
+
+            .history-title {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 2rem;
+            }
+
+            .footer-links {
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-bottom-links {
+                justify-content: center;
+            }
+        }
     </style>
-  </head>
-  <body>
-    <nav class="navbar navbar-expand-lg">
-      <div class="container">
-        <a class="navbar-brand" href="{{ url_for('index') }}">
-          <i class="fas fa-hands me-2"></i>SignLang AI
-        </a>
-        <button
-          class="navbar-toggler custom-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav ms-auto">
-            <li class="nav-item">
-              <button class="brightness-toggle" id="brightnessToggle">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <circle cx="12" cy="12" r="5" />
-                  <path
-                    d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
-                  />
-                </svg>
-              </button>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('index') }}">Home</a>
-            </li>
-          </ul>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav id="navbar">
+        <div class="logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 6.75C21 9.5 18.75 11.25 16.5 11.25C14.25 11.25 12 9.5 12 6.75C12 4 14.25 2.25 16.5 2.25C18.75 2.25 21 4 21 6.75Z" fill="#6C63FF"/>
+                <path d="M3 17.25C3 14.5 5.25 12.75 7.5 12.75C9.75 12.75 12 14.5 12 17.25C12 20 9.75 21.75 7.5 21.75C5.25 21.75 3 20 3 17.25Z" fill="#6C63FF"/>
+                <path d="M16.5 21.75C16.0857 21.75 15.75 21.4143 15.75 21V16.5C15.75 16.0858 16.0857 15.75 16.5 15.75C16.9143 15.75 17.25 16.0858 17.25 16.5V21C17.25 21.4143 16.9143 21.75 16.5 21.75Z" fill="#6C63FF"/>
+                <path d="M7.5 8.25C7.0857 8.25 6.75 7.91421 6.75 7.5V3C6.75 2.58579 7.0857 2.25 7.5 2.25C7.9143 2.25 8.25 2.58579 8.25 3V7.5C8.25 7.91421 7.9143 8.25 7.5 8.25Z" fill="#6C63FF"/>
+            </svg>
+            <span>SignLang</span>
         </div>
-      </div>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/#about">About</a>
+            <a href="/#features">Features</a>
+            <a href="/#team">Team</a>
+            <a href="/#contact">Contact</a>
+            <button class="mobile-nav-toggle mobile-nav-close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <a href="/">
+            <button class="cta-btn" style="background-color: transparent; color: var(--primary); border: 2px solid var(--primary);">Back to Home</button>
+        </a>
+        <button class="mobile-nav-toggle">
+            <i class="fas fa-bars"></i>
+        </button>
     </nav>
 
-    <div class="content-wrapper">
-      <div class="animated-background"></div>
-      <div class="container main-container">
-        <div class="row">
-          <div class="col-lg-8">
-            <div class="video-section">
-              <div class="card mb-4">
-                <div class="card-body">
-                  <div class="video-container">
-                    <img src="{{ url_for('video_feed') }}" alt="Video stream" />
-                    <div class="position-absolute top-0 end-0 m-3">
-                      <span class="recording-indicator"></span>
-                      <span class="text-danger">Live</span>
-                    </div>
-                  </div>
-
-                  <div class="controls">
-                    <form
-                      action="{{ url_for('clear_history') }}"
-                      method="post"
-                      class="d-inline"
-                    >
-                      <button type="submit" class="btn btn-control">
-                        <i class="fas fa-trash-alt me-2"></i>Clear History
-                      </button>
-                    </form>
-                    <a
-                      href="{{ url_for('save_history') }}"
-                      class="btn btn-control"
-                    >
-                      <i class="fas fa-download me-2"></i>Download History
-                    </a>
-                    <a href="{{ url_for('index') }}" class="btn btn-control">
-                      <i class="fas fa-home me-2"></i>Back to Home
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-lg-4">
-            <div class="history-section">
-              <div class="card">
-                <div class="card-body">
-                  <div class="current-time" id="current-time">
-                    <i class="far fa-clock me-2"></i>Loading...
-                  </div>
-
-                  <h3 class="h4 mb-3">Gesture History</h3>
-                  <div class="history-container">
-                    <div id="history-content">
-                      {% if history %} {% for entry in history|reverse %}
-                      <div class="history-entry">
-                        <strong class="text-accent"
-                          >{{ entry.timestamp }}</strong
-                        >
-                        <p class="mb-0">{{ entry.gesture }}</p>
-                      </div>
-                      {% endfor %} {% else %}
-                      <p class="text-muted">No gestures detected yet.</p>
-                      {% endif %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <!-- Detection Section -->
+    <section class="detection">
+        <div class="detection-title">
+            <h1>Sign Language Detection</h1>
+            <p>Use your webcam to practice sign language gestures. Our AI will recognize your hand gestures in real-time.</p>
         </div>
-      </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-      // Brightness toggle functionality
-      const brightnessToggle = document.getElementById("brightnessToggle");
-      brightnessToggle.addEventListener("click", () => {
-        document
-          .querySelector(".content-wrapper")
-          .classList.toggle("bright-mode");
-        brightnessToggle.classList.toggle("active");
-      });
-
-      // Existing JavaScript remains the same
-      function updateTime() {
-        const now = new Date();
-        const timeString = now.toLocaleTimeString();
-        const dateString = now.toLocaleDateString();
-        const timeElement = document.getElementById("current-time");
-        timeElement.innerHTML = `<i class="far fa-clock me-2"></i>${dateString} ${timeString}`;
-      }
-
-      setInterval(updateTime, 1000);
-      updateTime();
-
-      async function updateHistory() {
-        try {
-          const response = await fetch("/get_history");
-          const data = await response.json();
-
-          const historyContent = document.getElementById("history-content");
-          if (data.history.length === 0) {
-            historyContent.innerHTML =
-              '<p class="text-muted">No gestures detected yet.</p>';
-          } else {
-            historyContent.innerHTML = data.history
-              .reverse()
-              .map(
-                (entry) => `
-                        <div class="history-entry">
-                            <strong class="text-accent">${entry.timestamp}</strong>
-                            <p class="mb-0">${entry.gesture}</p>
+        
+        <div class="detection-container">
+            <div class="video-container">
+                <img src="{{ url_for('video_feed') }}" class="video-feed" alt="Video Feed">
+            </div>
+            
+            <div class="history-container">
+                <div class="history-title">
+                    <h2>Gesture History</h2>
+                    <div class="history-actions">
+                        <button id="soundToggle" class="btn-secondary">
+                            <i class="fas fa-volume-mute"></i> Sound
+                        </button>
+                        <a href="{{ url_for('save_history') }}" class="btn-secondary">
+                            <i class="fas fa-download"></i> Save
+                        </a>
+                        <form action="{{ url_for('clear_history') }}" method="post" style="display: inline;">
+                            <button type="submit" class="btn-secondary">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="history-list">
+                    {% if history %}
+                        {% for entry in history|reverse %}
+                            <div class="history-item">
+                                <span>{{ entry.gesture }}</span>
+                                <span class="history-time">{{ entry.timestamp }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="history-empty">
+                            <i class="fas fa-hand-paper"></i>
+                            <p>No gestures detected yet</p>
+                            <p>Try making a gesture in front of the camera</p>
                         </div>
-                    `
-              )
-              .join("");
-          }
-        } catch (error) {
-          console.error("Error updating history:", error);
-        }
-      }
+                    {% endif %}
+                </div>
+            </div>
+        </div>
 
-      setInterval(updateHistory, 1000);
+        <div class="instructions">
+            <h2>Available Gestures</h2>
+            <div class="gesture-grid">
+                <div class="gesture-card">
+                    <div class="gesture-icon">👍</div>
+                    <h3>Thumbs Up</h3>
+                    <p>Extend your thumb upward with your fist closed</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👎</div>
+                    <h3>Thumbs Down</h3>
+                    <p>Extend your thumb downward with your fist closed</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">✌️</div>
+                    <h3>Peace</h3>
+                    <p>Extend your index and middle fingers in a V shape</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👌</div>
+                    <h3>OK Sign</h3>
+                    <p>Form a circle with your thumb and index finger</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👋</div>
+                    <h3>Wave</h3>
+                    <p>Extend all fingers and spread them apart</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">✋</div>
+                    <h3>Stop/High Five</h3>
+                    <p>Show your palm with all fingers extended upwards</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👈</div>
+                    <h3>Point Left</h3>
+                    <p>Point with your index finger to the left</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👉</div>
+                    <h3>Point Right</h3>
+                    <p>Point with your index finger to the right</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👆</div>
+                    <h3>Point Up</h3>
+                    <p>Point with your index finger upwards</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">👇</div>
+                    <h3>Point Down</h3>
+                    <p>Point with your index finger downwards</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">🤘</div>
+                    <h3>Rock On</h3>
+                    <p>Extend your index finger and pinky</p>
+                </div>
+                
+                <div class="gesture-card">
+                    <div class="gesture-icon">🖖</div>
+                    <h3>Live Long</h3>
+                    <p>Separate fingers into two groups: middle+index and ring+pinky</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-      window.addEventListener("scroll", function () {
-        const navbar = document.querySelector(".navbar");
-        if (window.scrollY > 50) {
-          navbar.style.padding = "0.5rem 1rem";
-          navbar.style.backgroundColor = "rgba(255, 255, 255, 0.95)";
-        } else {
-          navbar.style.padding = "1rem";
-          navbar.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-info">
+                <div class="footer-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 6.75C21 9.5 18.75 11.25 16.5 11.25C14.25 11.25 12 9.5 12 6.75C12 4 14.25 2.25 16.5 2.25C18.75 2.25 21 4 21 6.75Z" fill="#ffffff"/>
+                        <path d="M3 17.25C3 14.5 5.25 12.75 7.5 12.75C9.75 12.75 12 14.5 12 17.25C12 20 9.75 21.75 7.5 21.75C5.25 21.75 3 20 3 17.25Z" fill="#ffffff"/>
+                        <path d="M16.5 21.75C16.0857 21.75 15.75 21.4143 15.75 21V16.5C15.75 16.0858 16.0857 15.75 16.5 15.75C16.9143 15.75 17.25 16.0858 17.25 16.5V21C17.25 21.4143 16.9143 21.75 16.5 21.75Z" fill="#ffffff"/>
+                        <path d="M7.5 8.25C7.0857 8.25 6.75 7.91421 6.75 7.5V3C6.75 2.58579 7.0857 2.25 7.5 2.25C7.9143 2.25 8.25 2.58579 8.25 3V7.5C8.25 7.91421 7.9143 8.25 7.5 8.25Z" fill="#ffffff"/>
+                    </svg>
+                    SignLang
+                </div>
+                <p>SignLang is an innovative application that uses cutting-edge technology to recognize sign language gestures in real-time, bridging communication gaps and making the world more accessible.</p>
+                <div class="footer-social">
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <div class="footer-link-group">
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Our Team</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-link-group">
+                    <h3>Resources</h3>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="#">API</a></li>
+                        <li><a href="#">Support</a></li>
+                        <li><a href="#">Community</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-link-group">
+                    <h3>Legal</h3>
+                    <ul>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                        <li><a href="#">Cookie Policy</a></li>
+                        <li><a href="#">Accessibility</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2025 SignLang. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile navigation toggle
+        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
+        const navLinks = document.querySelector('.nav-links');
+        
+        mobileNavToggle.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        });
+        
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
+        // Sound functionality
+        let soundEnabled = false;
+        let lastTimestamp = null;
+
+        // Sound toggle button
+        document.getElementById('soundToggle').addEventListener('click', function() {
+            soundEnabled = !soundEnabled;
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-volume-up');
+            icon.classList.toggle('fa-volume-mute');
+        });
+
+        // Text-to-speech function
+        function speakGesture(text) {
+            if ('speechSynthesis' in window) {
+                // Remove emoji and any trailing space
+                const cleanText = text.split(' ')
+                                    .filter(part => !/\p{Emoji}/u.test(part))
+                                    .join(' ')
+                                    .trim();
+
+                const utterance = new SpeechSynthesisUtterance(`${cleanText}`);
+                utterance.lang = 'en-US';
+                speechSynthesis.speak(utterance);
+            }
         }
-      });
+
+        // Modified refreshHistory function
+        function refreshHistory() {
+            fetch('/get_history')
+                .then(response => response.json())
+                .then(data => {
+                    const historyList = document.querySelector('.history-list');
+                    if (data.history && data.history.length > 0) {
+                        let historyHTML = '';
+                        const reversedHistory = data.history.slice().reverse();
+                        
+                        // Track latest entry
+                        const latestEntry = data.history[data.history.length - 1];
+                        
+                        // Check for new gesture
+                        if (soundEnabled && latestEntry.timestamp !== lastTimestamp) {
+                            if (lastTimestamp !== null) {
+                                speakGesture(latestEntry.gesture);
+                            }
+                            lastTimestamp = latestEntry.timestamp;
+                        }
+
+                        reversedHistory.forEach(entry => {
+                            historyHTML += `
+                                <div class="history-item">
+                                    <span>${entry.gesture}</span>
+                                    <span class="history-time">${entry.timestamp}</span>
+                                </div>
+                            `;
+                        });
+                        historyList.innerHTML = historyHTML;
+                    } else {
+                        lastTimestamp = null;
+                        historyList.innerHTML = `
+                            <div class="history-empty">
+                                <i class="fas fa-hand-paper"></i>
+                                <p>No gestures detected yet</p>
+                                <p>Try making a gesture in front of the camera</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => console.error('Error fetching history:', error));
+        }
+        
+        // Refresh history every 3 seconds
+        setInterval(refreshHistory, 2000);
+        
+        // Initial history load
+        document.addEventListener('DOMContentLoaded', refreshHistory);
     </script>
-  </body>
+</body>
 </html>
