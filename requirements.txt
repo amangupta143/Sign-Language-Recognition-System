@@ -1,8 +1,8 @@
-Flask
-numpy
-opencv-python
-mediapipe
-numpy
-Pillow
-pyttsx3
-Werkzeug
+Flask==3.1.0
+opencv-python==4.11.0.86
+mediapipe==0.10.20
+numpy==1.26.4
+gunicorn==21.2.0
+Pillow==11.1.0
+pyttsx3==2.98
+Werkzeug==3.1.3
