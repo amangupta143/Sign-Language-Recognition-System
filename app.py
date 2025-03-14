@@ -7,6 +7,7 @@ import datetime
 import numpy as np
 import threading
 import re
+from PIL import Image, ImageDraw
 
 app = Flask(__name__)
 
@@ -191,18 +192,23 @@ class SignLanguageConverter:
 
 # Initialize the converter and capture with error handling
 def init_camera():
-    camera = cv2.VideoCapture(0)
-    if not camera.isOpened():
-        camera = cv2.VideoCapture(1)  # Try another camera index
-    if not camera.isOpened():
-        raise RuntimeError("No camera found")
-    return camera
+    try:
+        camera = cv2.VideoCapture(0)
+        if not camera.isOpened():
+            camera = cv2.VideoCapture(1)  # Try another camera index
+        if not camera.isOpened():
+            return None  # Return None instead of raising an error
+        return camera
+    except Exception as e:
+        print(f"Error initializing camera: {e}")
+        return None
 
 try:
     sign_lang_conv = SignLanguageConverter()
     camera = init_camera()
 except Exception as e:
     print(f"Error initializing camera: {e}")
+    camera = None
 
 def remove_emoji(text):
     """Remove emoji characters from text using regex pattern"""
@@ -223,40 +229,52 @@ def generate_frames():
     global camera
     
     while True:
-        try:
-            success, frame = camera.read()
-            if not success:
-                camera.release()
-                camera = init_camera()
-                continue
-            
-            results = sign_lang_conv.detect_gesture(frame)
-            gesture = sign_lang_conv.current_gesture
-            
-            if gesture:
-                # Remove emoji from gesture text
-                clean_gesture = remove_emoji(gesture)
-                cv2.putText(frame, clean_gesture, (10, 50), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            
-            if results.multi_hand_landmarks:
-                for hand_landmarks in results.multi_hand_landmarks:
-                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            
+        if camera is None:
+            # Create a placeholder frame with message
+            img = Image.new('RGB', (640, 480), color=(0, 0, 0))
+            d = ImageDraw.Draw(img)
+            d.text((100, 240), "Camera not available - please enable access", fill=(255, 255, 255))
+            frame = np.array(img)
             ret, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
-            
             yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        
-        except Exception as e:
-            print(f"Error in generate_frames: {e}")
+                  b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(1)  # Sleep to reduce CPU usage
+        else:
             try:
-                camera.release()
-            except:
-                pass
-            camera = init_camera()
-            continue
+                success, frame = camera.read()
+                if not success:
+                    camera.release()
+                    camera = init_camera()
+                    continue
+                
+                results = sign_lang_conv.detect_gesture(frame)
+                gesture = sign_lang_conv.current_gesture
+                
+                if gesture:
+                    # Remove emoji from gesture text
+                    clean_gesture = remove_emoji(gesture)
+                    cv2.putText(frame, clean_gesture, (10, 50), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+                
+                if results.multi_hand_landmarks:
+                    for hand_landmarks in results.multi_hand_landmarks:
+                        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                
+                ret, buffer = cv2.imencode('.jpg', frame)
+                frame = buffer.tobytes()
+                
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            
+            except Exception as e:
+                print(f"Error in generate_frames: {e}")
+                try:
+                    camera.release()
+                except:
+                    pass
+                camera = init_camera()
+                continue
 
 @app.route('/')
 def index():
