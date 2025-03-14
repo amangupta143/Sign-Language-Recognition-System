@@ -569,10 +569,8 @@
         
         <div class="detection-container">
             <div class="video-container">
-                <img src="{{ url_for('video_feed') }}" class="video-feed" alt="Video Feed">
-                <div class="camera-notice" style="position: absolute; top: 10px; left: 10px; background-color: rgba(0, 0, 0, 0.7); color: white; padding: 8px; border-radius: 5px; display: none;">
-                    <i class="fas fa-exclamation-triangle"></i> Camera access required for detection
-                </div>
+                <video id="webcam" class="video-feed" autoplay playsinline></video>
+                <canvas id="canvasOutput" style="display: none;"></canvas>
             </div>
             
             <div class="history-container">
@@ -757,6 +755,37 @@
     </footer>
 
     <script>
+        // Mobile navigation toggle
+        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileNavToggle.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                
+                // Toggle between bars and times icon
+                const icon = toggle.querySelector('i');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+        });
+        
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+        
         // Sound functionality
         let soundEnabled = false;
         let lastTimestamp = null;
@@ -834,72 +863,108 @@
         // Initial history load
         document.addEventListener('DOMContentLoaded', refreshHistory);
 
-        // Mobile navigation toggle
-        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
-        const navLinks = document.querySelector('.nav-links');
 
-        mobileNavToggle.forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-                
-                // Toggle between bars and times icon
-                const icon = toggle.querySelector('i');
-                if (icon.classList.contains('fa-bars')) {
-                    icon.classList.remove('fa-bars');
-                    icon.classList.add('fa-times');
-                } else {
-                    icon.classList.remove('fa-times');
-                    icon.classList.add('fa-bars');
-                }
-            });
-        });
-        
-        // Navbar scroll effect
-        const navbar = document.getElementById('navbar');
-        
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
+        // Camera handling
+        const video = document.getElementById('webcam');
+        const canvas = document.getElementById('canvasOutput');
+        const ctx = canvas.getContext('2d');
+        let streaming = false;
+        let frameInterval;
 
-        // Check for camera message in the video feed
-        const videoFeed = document.querySelector('.video-feed');
-        const cameraNotice = document.querySelector('.camera-notice');
-        
-        // Show camera notice immediately on load for deployed environments
-        if (window.location.hostname !== 'localhost' && 
-            window.location.hostname !== '127.0.0.1') {
-            cameraNotice.style.display = 'block';
-        }
-        
-        // Monitor for camera availability
-        videoFeed.addEventListener('load', function() {
-            setTimeout(() => {
-                // Create a canvas to analyze the video feed
-                const canvas = document.createElement('canvas');
-                canvas.width = videoFeed.width;
-                canvas.height = videoFeed.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(videoFeed, 0, 0);
+        // Start the webcam
+        async function startWebcam() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    },
+                    audio: false
+                });
                 
-                // Check if it's our placeholder image
-                try {
-                    const imgData = ctx.getImageData(100, 240, 400, 1).data;
-                    const isBlack = imgData[0] === 0 && imgData[1] === 0 && imgData[2] === 0;
+                video.srcObject = stream;
+                video.play();
+                
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    streaming = true;
                     
-                    // If our detection point is black, show the notice
-                    if (isBlack) {
-                        cameraNotice.style.display = 'block';
+                    // Start sending frames for processing
+                    frameInterval = setInterval(processFrame, 100); // Process 10 frames per second
+                };
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+                alert("Cannot access your camera. Please allow camera access and reload the page.");
+            }
+        }
+
+        // Process a frame and send to server
+        function processFrame() {
+            if (!streaming) return;
+            
+            // Draw the current video frame on the canvas
+            ctx.drawImage(video, 0, 0);
+            
+            // Get the image data as a JPEG base64 string
+            canvas.toBlob((blob) => {
+                // Create form data with the image
+                const formData = new FormData();
+                formData.append('frame', blob);
+                
+                // Send to server for processing
+                fetch('/process_frame', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Update gesture if detected
+                    if (data.gesture) {
+                        document.getElementById('current-gesture').textContent = data.gesture;
+                        
+                        // Add to history if it's a new gesture
+                        if (data.added_to_history) {
+                            refreshHistory();
+                        }
                     } else {
-                        cameraNotice.style.display = 'none';
+                        document.getElementById('current-gesture').textContent = 'No gesture detected';
                     }
-                } catch(e) {
-                    // CORS or other error, we can't check the image
-                }
-            }, 1000);
+                })
+                .catch(error => console.error('Error processing frame:', error));
+            }, 'image/jpeg', 0.8);
+        }
+
+        // Add this where you initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            startWebcam();
+            refreshHistory();
+            
+            // Add a gesture display element
+            const videoContainer = document.querySelector('.video-container');
+            const gestureDisplay = document.createElement('div');
+            gestureDisplay.className = 'gesture-display';
+            gestureDisplay.innerHTML = '<div id="current-gesture">Waiting for camera...</div>';
+            gestureDisplay.style.position = 'absolute';
+            gestureDisplay.style.bottom = '10px';
+            gestureDisplay.style.left = '10px';
+            gestureDisplay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            gestureDisplay.style.color = 'white';
+            gestureDisplay.style.padding = '5px 10px';
+            gestureDisplay.style.borderRadius = '5px';
+            videoContainer.style.position = 'relative';
+            videoContainer.appendChild(gestureDisplay);
+        });
+
+        // Clean up when leaving the page
+        window.addEventListener('beforeunload', () => {
+            if (frameInterval) {
+                clearInterval(frameInterval);
+            }
+            
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
         });
     </script>
 </body>

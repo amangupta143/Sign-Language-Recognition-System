@@ -1,4 +1,4 @@
-from flask import Flask, render_template, Response, redirect, url_for, jsonify, send_from_directory
+from flask import Flask, render_template, Response, redirect, url_for, jsonify, send_from_directory, request
 import os
 import mediapipe as mp
 import cv2
@@ -7,7 +7,6 @@ import datetime
 import numpy as np
 import threading
 import re
-from PIL import Image, ImageDraw
 
 app = Flask(__name__)
 
@@ -192,23 +191,18 @@ class SignLanguageConverter:
 
 # Initialize the converter and capture with error handling
 def init_camera():
-    try:
-        camera = cv2.VideoCapture(0)
-        if not camera.isOpened():
-            camera = cv2.VideoCapture(1)  # Try another camera index
-        if not camera.isOpened():
-            return None  # Return None instead of raising an error
-        return camera
-    except Exception as e:
-        print(f"Error initializing camera: {e}")
-        return None
+    camera = cv2.VideoCapture(0)
+    if not camera.isOpened():
+        camera = cv2.VideoCapture(1)  # Try another camera index
+    if not camera.isOpened():
+        raise RuntimeError("No camera found")
+    return camera
 
 try:
     sign_lang_conv = SignLanguageConverter()
     camera = init_camera()
 except Exception as e:
     print(f"Error initializing camera: {e}")
-    camera = None
 
 def remove_emoji(text):
     """Remove emoji characters from text using regex pattern"""
@@ -229,52 +223,40 @@ def generate_frames():
     global camera
     
     while True:
-        if camera is None:
-            # Create a placeholder frame with message
-            img = Image.new('RGB', (640, 480), color=(0, 0, 0))
-            d = ImageDraw.Draw(img)
-            d.text((100, 240), "Camera not available - please enable access", fill=(255, 255, 255))
-            frame = np.array(img)
-            ret, buffer = cv2.imencode('.jpg', frame)
-            frame = buffer.tobytes()
-            yield (b'--frame\r\n'
-                  b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            time.sleep(1)  # Sleep to reduce CPU usage
-        else:
-            try:
-                success, frame = camera.read()
-                if not success:
-                    camera.release()
-                    camera = init_camera()
-                    continue
-                
-                results = sign_lang_conv.detect_gesture(frame)
-                gesture = sign_lang_conv.current_gesture
-                
-                if gesture:
-                    # Remove emoji from gesture text
-                    clean_gesture = remove_emoji(gesture)
-                    cv2.putText(frame, clean_gesture, (10, 50), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-                
-                if results.multi_hand_landmarks:
-                    for hand_landmarks in results.multi_hand_landmarks:
-                        mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-                
-                ret, buffer = cv2.imencode('.jpg', frame)
-                frame = buffer.tobytes()
-                
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            
-            except Exception as e:
-                print(f"Error in generate_frames: {e}")
-                try:
-                    camera.release()
-                except:
-                    pass
+        try:
+            success, frame = camera.read()
+            if not success:
+                camera.release()
                 camera = init_camera()
                 continue
+            
+            results = sign_lang_conv.detect_gesture(frame)
+            gesture = sign_lang_conv.current_gesture
+            
+            if gesture:
+                # Remove emoji from gesture text
+                clean_gesture = remove_emoji(gesture)
+                cv2.putText(frame, clean_gesture, (10, 50), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+            
+            if results.multi_hand_landmarks:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            
+            ret, buffer = cv2.imencode('.jpg', frame)
+            frame = buffer.tobytes()
+            
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        
+        except Exception as e:
+            print(f"Error in generate_frames: {e}")
+            try:
+                camera.release()
+            except:
+                pass
+            camera = init_camera()
+            continue
 
 @app.route('/')
 def index():
@@ -288,10 +270,32 @@ def detect():
 def get_history():
     return jsonify({'history': sign_lang_conv.history})
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), 
-                   mimetype='multipart/x-mixed-replace; boundary=frame')
+# @app.route('/video_feed')
+# def video_feed():
+#     return Response(generate_frames(), 
+#                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/process_frame', methods=['POST'])
+def process_frame():
+    if 'frame' not in request.files:
+        return jsonify({'error': 'No frame provided'}), 400
+    
+    file = request.files['frame']
+    
+    # Convert the received image file to a numpy array
+    nparr = np.frombuffer(file.read(), np.uint8)
+    image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    # Process the frame with MediaPipe
+    results = sign_lang_conv.detect_gesture(image)
+    gesture = sign_lang_conv.current_gesture
+    
+    # Return the detected gesture
+    return jsonify({
+        'gesture': gesture if gesture else None,
+        'added_to_history': len(sign_lang_conv.history) > 0 and 
+                           sign_lang_conv.history[-1]['gesture'] == gesture
+    })
 
 @app.route('/clear_history', methods=['POST'])
 def clear_history():
@@ -315,4 +319,4 @@ def save_history():
     )
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
