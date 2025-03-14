@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='favicon.svg') }}"
+    />
+    <link
+      rel="shortcut icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='favicon.svg') }}"
+    />
+    <title>Sign Language Recognition</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #ffffff;
+        --secondary: #f8fafc;
+        --accent: #3b82f6;
+        --accent-light: #60a5fa;
+        --text: #0f172a;
+        --text-muted: #64748b;
+        --gradient: linear-gradient(135deg, #3b82f6, #60a5fa);
+        --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1),
+          0 2px 4px -2px rgb(0 0 0 / 0.1);
+      }
+
+      /* ::-webkit-scrollbar {
+        display: none;
+        width: 0;
+        background: transparent;
+      } */
+
+      body {
+        background-color: var(--primary);
+        color: var(--text);
+        font-family: "Inter", sans-serif;
+        line-height: 1.6;
+        overflow-x: hidden;
+        width: 100%;
+        position: relative;
+      }
+
+      /* Animated Background */
+      .animated-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        background: var(--primary);
+        overflow: hidden;
+      }
+
+      .animated-background::before {
+        content: "";
+        position: absolute;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(
+          circle,
+          var(--accent-light) 10%,
+          transparent 10%
+        );
+        background-size: 25px 25px;
+        opacity: 0.05;
+        animation: backgroundMove 60s linear infinite;
+        transform-origin: 0 0;
+      }
+
+      @keyframes backgroundMove {
+        0% {
+          transform: translate(0, 0);
+        }
+        100% {
+          transform: translate(-50%, -50%);
+        }
+      }
+
+      /* Container Styles */
+      .container {
+        max-width: 100%;
+        overflow-x: hidden;
+        padding-left: 8rem !important;
+        padding-right: 8rem !important;
+      }
+
+      /* Add a media query for smaller screens */
+      @media (max-width: 768px) {
+        .container {
+          padding-left: 1.5rem !important;
+          padding-right: 1.5rem !important;
+        }
+      }
+
+      .main-wrapper {
+        position: relative;
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      /* Navbar Styles */
+      .navbar {
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        padding: 1rem 2rem;
+        position: fixed;
+        width: 100%;
+        z-index: 1000;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow);
+      }
+
+      .navbar.scrolled {
+        padding: 0.5rem 2rem;
+        background-color: rgba(255, 255, 255, 0.95);
+      }
+
+      .nav-link {
+        color: var(--text) !important;
+        margin: 0 1rem;
+        font-weight: 500;
+        position: relative;
+        transition: all 0.3s;
+      }
+
+      .nav-link::after {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 2px;
+        bottom: -2px;
+        left: 0;
+        background: var(--gradient);
+        transition: width 0.3s ease;
+      }
+
+      .nav-link:hover::after {
+        width: 100%;
+      }
+
+      .custom-toggler {
+        border: 2px solid var(--accent) !important;
+        padding: 4px 6px;
+      }
+
+      .custom-toggler .navbar-toggler-icon {
+        background-image: none;
+        position: relative;
+      }
+
+      .custom-toggler .navbar-toggler-icon::before,
+      .custom-toggler .navbar-toggler-icon::after,
+      .custom-toggler .navbar-toggler-icon {
+        width: 24px;
+        height: 2px;
+        background-color: var(--accent);
+        display: inline-block;
+        transition: all 0.3s ease;
+      }
+
+      .custom-toggler .navbar-toggler-icon::before,
+      .custom-toggler .navbar-toggler-icon::after {
+        content: "";
+        position: absolute;
+        left: 0;
+      }
+
+      .custom-toggler .navbar-toggler-icon::before {
+        top: -8px;
+      }
+
+      .custom-toggler .navbar-toggler-icon::after {
+        bottom: -8px;
+      }
+
+      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon {
+        background-color: transparent;
+      }
+
+      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::before {
+        transform: rotate(45deg);
+        top: 0;
+      }
+
+      .custom-toggler[aria-expanded="true"] .navbar-toggler-icon::after {
+        transform: rotate(-45deg);
+        bottom: 0;
+      }
+
+      .custom-toggler:focus {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
+      }
+      /* Hero Section */
+      .hero-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        position: relative;
+        padding: 6rem 0 4rem;
+        overflow: hidden;
+      }
+
+      .hero-section .col-lg-6 {
+        padding-top: 2rem;
+      }
+
+      .hero-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+          circle at 50% 50%,
+          var(--accent) 0%,
+          transparent 50%
+        );
+        opacity: 0.1;
+        animation: pulseGradient 8s ease-in-out infinite;
+      }
+
+      @keyframes pulseGradient {
+        0% {
+          transform: scale(0.95);
+          opacity: 0.1;
+        }
+        50% {
+          transform: scale(1);
+          opacity: 0.15;
+        }
+        100% {
+          transform: scale(0.95);
+          opacity: 0.1;
+        }
+      }
+
+      .hero-title {
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1.2;
+      }
+
+      .hero-subtitle {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: var(--text-muted);
+        font-weight: 400;
+      }
+
+      /* Button Styles */
+      .custom-btn {
+        background: var(--gradient);
+        color: white;
+        padding: 1rem 2.5rem;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .custom-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        color: white;
+      }
+
+      .custom-btn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transform: translateX(-100%);
+        transition: transform 0.6s ease;
+      }
+
+      .custom-btn:hover::before {
+        transform: translateX(100%);
+      }
+
+      /* Section Styles */
+      .section {
+        padding: 8rem 0;
+        position: relative;
+      }
+
+      .section .col-lg-4 {
+        margin-bottom: 1rem;
+        padding: 0 0.5rem;
+      }
+
+      .section-dark {
+        background-color: var(--secondary);
+      }
+
+      .section-title {
+        text-align: center;
+        margin-bottom: 4rem;
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* Feature Cards */
+      .text-gradient {
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .text-accent {
+        color: var(--accent);
+      }
+
+      .feature-icon-wrapper,
+      .vision-icon-wrapper {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+      }
+
+      .vision-card,
+      .tech-card {
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+
+      .vision-card:hover,
+      .tech-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .tech-item {
+        transition: all 0.3s ease;
+      }
+
+      .tech-item:hover {
+        background: var(--gradient) !important;
+        color: white;
+      }
+
+      .tech-item:hover i,
+      .tech-item:hover p {
+        color: white !important;
+      }
+
+      .tech-item i {
+        font-size: 2rem;
+        transition: color 0.3s ease;
+      }
+
+      .about-content,
+      .vision-card,
+      .tech-card {
+        border: 1px solid rgba(59, 130, 246, 0.1);
+      }
+
+      .feature-item {
+        transition: transform 0.3s ease;
+      }
+
+      .feature-item:hover {
+        transform: translateX(10px);
+      }
+
+      /* Team Cards */
+
+      .team-card {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(59, 130, 246, 0.1);
+        border-radius: 20px;
+        padding: 2.5rem;
+        transition: all 0.3s ease;
+        height: 100%;
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow);
+      }
+
+      .team-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent);
+      }
+
+      .team-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        background: var(--gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .team-card:hover .team-image {
+        transform: scale(1.05);
+      }
+
+      .team-image i {
+        font-size: 4rem;
+        color: #ffffff;
+      }
+
+      /* Statistics Section */
+      .stat-card {
+        text-align: center;
+        padding: 2rem;
+        position: relative;
+      }
+
+      .stat-number {
+        font-size: 3.5rem;
+        font-weight: 700;
+        background: var(--gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .stat-label {
+        color: var(--text-muted);
+        font-size: 1.2rem;
+        font-weight: 500;
+      }
+
+      /* Social Links */
+      .social-links a {
+        color: var(--text-muted);
+        margin: 0 15px;
+        font-size: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .social-links a:hover {
+        color: var(--accent);
+        transform: translateY(-3px);
+      }
+
+      /* Footer */
+      .footer {
+        padding-top: 2rem;
+        background-color: var(--secondary);
+        border-top: 1px solid rgba(59, 130, 246, 0.1);
+      }
+
+      .footer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: var(--gradient);
+      }
+
+      .footer-text {
+        color: var(--text-muted);
+      }
+
+      /* Scroll to Top Button */
+      .scroll-top {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background: var(--gradient);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 999;
+      }
+
+      .scroll-top.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .scroll-top:hover {
+        transform: translateY(-5px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main-wrapper">
+      <!-- Animated Background -->
+      <div class="animated-background"></div>
+      <!-- Navigation -->
+      <nav class="navbar navbar-expand-lg">
+        <div class="container">
+          <a class="navbar-brand" href="#"
+            ><i class="fas fa-hands me-2"></i>SignLang AI</a
+          >
+          <button
+            class="navbar-toggler custom-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item">
+                <a class="nav-link" href="#home">Home</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#about">About</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#features">Features</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#team">Team</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#contact">Contact</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <section class="hero-section" id="home">
+        <div class="container">
+          <div class="row align-items-center">
+            <div class="col-lg-6" data-aos="fade-right">
+              <h1 class="hero-title">Sign Language Recognition</h1>
+              <p class="hero-subtitle">
+                Breaking communication barriers through artificial intelligence
+              </p>
+              <a href="{{ url_for('detect') }}" class="btn custom-btn">
+                Start Detection
+                <i class="fas fa-arrow-right ms-2"></i>
+              </a>
+            </div>
+            <div class="col-lg-6" data-aos="fade-left">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+                <!-- Background Elements -->
+                <defs>
+                  <linearGradient
+                    id="grad1"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    <stop
+                      offset="0%"
+                      style="stop-color: #3b82f6; stop-opacity: 0.2"
+                    />
+                    <stop
+                      offset="100%"
+                      style="stop-color: #60a5fa; stop-opacity: 0.1"
+                    />
+                  </linearGradient>
+                  <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop
+                      offset="0%"
+                      style="stop-color: #3b82f6; stop-opacity: 1"
+                    />
+                    <stop
+                      offset="100%"
+                      style="stop-color: #60a5fa; stop-opacity: 1"
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id="handGrad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    <stop offset="0%" style="stop-color: #3b82f6" />
+                    <stop offset="100%" style="stop-color: #60a5fa" />
+                  </linearGradient>
+                  <linearGradient
+                    id="detectionGrad"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
+                    <stop
+                      offset="0%"
+                      style="stop-color: #60a5fa; stop-opacity: 0.3"
+                    />
+                    <stop
+                      offset="100%"
+                      style="stop-color: #3b82f6; stop-opacity: 0.3"
+                    />
+                  </linearGradient>
+                </defs>
+
+                <!-- Enhanced Background Circles with Pulsing Animation -->
+                <circle
+                  cx="400"
+                  cy="300"
+                  r="280"
+                  fill="url(#grad1)"
+                  opacity="0.5"
+                >
+                  <animate
+                    attributeName="r"
+                    values="280;300;280"
+                    dur="8s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0.5;0.3;0.5"
+                    dur="8s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <circle
+                  cx="400"
+                  cy="300"
+                  r="200"
+                  fill="url(#grad1)"
+                  opacity="0.3"
+                >
+                  <animate
+                    attributeName="r"
+                    values="200;220;200"
+                    dur="6s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    values="0.3;0.1;0.3"
+                    dur="6s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+
+                <!-- Detection Box with Enhanced Pulse Animation -->
+                <rect
+                  x="300"
+                  y="200"
+                  width="200"
+                  height="200"
+                  fill="none"
+                  stroke="url(#detectionGrad)"
+                  stroke-width="2"
+                  rx="20"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="0.8;0.2;0.8"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="stroke-width"
+                    values="2;3;2"
+                    dur="2s"
+                    repeatCount="indefinite"
+                  />
+                </rect>
+
+                <!-- Enhanced Corner Markers -->
+                <path
+                  d="M290 210 L290 190 L310 190"
+                  fill="none"
+                  stroke="#3b82f6"
+                  stroke-width="2"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="1;0.4;1"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="stroke-width"
+                    values="2;3;2"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+                <path
+                  d="M510 210 L510 190 L490 190"
+                  fill="none"
+                  stroke="#3b82f6"
+                  stroke-width="2"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="1;0.4;1"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="stroke-width"
+                    values="2;3;2"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+                <path
+                  d="M290 390 L290 410 L310 410"
+                  fill="none"
+                  stroke="#3b82f6"
+                  stroke-width="2"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="1;0.4;1"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="stroke-width"
+                    values="2;3;2"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+                <path
+                  d="M510 390 L510 410 L490 410"
+                  fill="none"
+                  stroke="#3b82f6"
+                  stroke-width="2"
+                >
+                  <animate
+                    attributeName="stroke-opacity"
+                    values="1;0.4;1"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="stroke-width"
+                    values="2;3;2"
+                    dur="1.5s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+
+                <!-- Enhanced Detection Label -->
+                <rect
+                  x="320"
+                  y="180"
+                  width="160"
+                  height="30"
+                  rx="15"
+                  fill="url(#detectionGrad)"
+                />
+                <text
+                  x="400"
+                  y="200"
+                  text-anchor="middle"
+                  fill="#1e40af"
+                  font-size="14"
+                  font-family="Inter, sans-serif"
+                  font-weight="500"
+                >
+                  Detecting: Rock On 🤘
+                </text>
+
+                <!-- Enhanced Confidence Bar -->
+                <rect
+                  x="320"
+                  y="420"
+                  width="160"
+                  height="20"
+                  rx="10"
+                  fill="#e5e7eb"
+                />
+                <rect
+                  x="320"
+                  y="420"
+                  width="144"
+                  height="20"
+                  rx="10"
+                  fill="url(#grad2)"
+                >
+                  <animate
+                    attributeName="width"
+                    values="0;150"
+                    dur="1s"
+                    begin="0s"
+                    fill="freeze"
+                  />
+                </rect>
+                <text
+                  x="400"
+                  y="434"
+                  text-anchor="middle"
+                  fill="#ffffff"
+                  font-size="12"
+                  font-family="Inter, sans-serif"
+                  font-weight="500"
+                >
+                  Confidence: 94%
+                </text>
+
+                <!-- hand drawing -->
+                <g transform="translate(350,250) scale(1.5)">
+                  <path
+                    fill="#f6cbad"
+                    fill-rule="evenodd"
+                    d="M66.193,23.743c-2.379-2.378-6.234-2.378-8.613,0l-5.581,5.581V6c0-3.313-2.686-6-6-6C42.686,0,40,2.688,40,6v20c0-3.313-2.688-6-6.001-6s-6,2.687-6,6c0-3.313-2.686-6-5.999-6c-3.314,0-6.001,2.687-6.001,6V10c0-3.313-2.686-6-6-6C6.686,4,4,6.688,4,10v32c0,3.314,2.686,6,5.999,6c3.314,0,6-2.686,6-6v-2c0,3.313,2.687,6,6.001,6c3.313,0,5.999-2.687,5.999-6v4c0,2.522,1.558,4.676,3.761,5.563l-0.018,0.019c-2.378,2.378-2.379,6.234,0,8.612c2.378,2.378,11.879,0.185,14.257-2.193l20.194-23.646C68.572,29.978,68.571,26.121,66.193,23.743z"
+                    clip-rule="evenodd"
+                  ></path>
+                  <path
+                    fill="#dbb59a"
+                    fill-rule="evenodd"
+                    d="M34,20.001c-3.314,0-6,2.687-6,6c0-3.313-2.687-6-6-6s-6,2.687-6,6v14c0,3.313,2.687,6,6,6s6-2.687,6-6v4c0,3.313,2.686,6,6,6c3.313,0,6-2.687,6-6v-18C40,22.688,37.313,20.001,34,20.001z"
+                    clip-rule="evenodd"
+                  ></path>
+                  <path
+                    fill="#ffefe0"
+                    fill-rule="evenodd"
+                    d="M18,40.001c0,2.209,1.791,4,4,4s4-1.791,4-4v-2h-8V40.001zM30,42.001v2c0,2.209,1.791,4,4,4s4-1.791,4-4v-2H30z"
+                    clip-rule="evenodd"
+                  ></path>
+                  <path
+                    fill="gray"
+                    fill-rule="evenodd"
+                    d="M40,34.001V40v4c0,3.314-2.688,6-6.001,6s-6-2.686-6-6v-4c0,3.313-2.686,6-5.999,6c-3.314,0-6.001-2.687-6.001-6v-5.999H4v5.995C4,39.998,3.999,39.999,3.999,40C3.999,40.013,4,40.025,4,40.039V42c0,0.68,0.118,1.33,0.326,1.939C6.207,55.319,16.087,64,27.999,64c6.943,0,13.179-2.966,17.561-7.678c0.138-0.109,0.331-0.213,0.439-0.321l11.982-14.03l-4.781-7.97H40z M45.999,0c-0.007,0-0.013,0.001-0.02,0.001h0.039C46.012,0.001,46.006,0,45.999,0z M64.776,34.001l-1.438,1.698l1.45-1.698H64.776z"
+                    clip-rule="evenodd"
+                  ></path>
+                </g>
+
+                <g>
+                  <!-- Main scanning bar with gradient -->
+                  <rect
+                    x="300"
+                    y="200"
+                    width="200"
+                    height="4"
+                    fill="url(#grad2)"
+                  >
+                    <animate
+                      attributeName="y"
+                      values="200;400;200"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      calcMode="ease-in-out"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.9;0.6;0.9"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      calcMode="ease-in-out"
+                    />
+                  </rect>
+
+                  <!-- Glow effect -->
+                  <rect
+                    x="300"
+                    y="200"
+                    width="200"
+                    height="15"
+                    fill="url(#grad2)"
+                    opacity="0.2"
+                  >
+                    <animate
+                      attributeName="y"
+                      values="195;395;195"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      calcMode="ease-in-out"
+                    />
+                  </rect>
+
+                  <!-- Bright line on top of scanning bar -->
+                  <rect x="300" y="200" width="200" height="1" fill="#ffffff">
+                    <animate
+                      attributeName="y"
+                      values="200;400;200"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      calcMode="ease-in-out"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="1;0.5;1"
+                      dur="2s"
+                      repeatCount="indefinite"
+                      calcMode="ease-in-out"
+                    />
+                  </rect>
+                </g>
+                <g>
+                  <!-- Large outer floating particles -->
+                  <circle cx="250" cy="200" r="4" fill="#3b82f6">
+                    <animate
+                      attributeName="cx"
+                      values="250;200;250"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="cy"
+                      values="200;250;200"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="4;6;4"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  <circle cx="550" cy="200" r="5" fill="#60a5fa">
+                    <animate
+                      attributeName="cx"
+                      values="550;600;550"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="cy"
+                      values="200;250;200"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="5;8;5"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  <circle cx="400" cy="150" r="6" fill="#3b82f6">
+                    <animate
+                      attributeName="cy"
+                      values="150;100;150"
+                      dur="8s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="8s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="6;9;6"
+                      dur="8s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  <circle cx="400" cy="450" r="5" fill="#60a5fa">
+                    <animate
+                      attributeName="cy"
+                      values="450;500;450"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="5;8;5"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  <circle cx="250" cy="400" r="4" fill="#3b82f6">
+                    <animate
+                      attributeName="cx"
+                      values="250;200;250"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="cy"
+                      values="400;450;400"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="4;7;4"
+                      dur="6s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+
+                  <circle cx="550" cy="400" r="5" fill="#60a5fa">
+                    <animate
+                      attributeName="cx"
+                      values="550;600;550"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="cy"
+                      values="400;450;400"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0.8;0.1;0.8"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                    <animate
+                      attributeName="r"
+                      values="5;8;5"
+                      dur="7s"
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- About Section -->
+      <section class="section section-dark" id="about">
+        <div class="container">
+          <h2 class="section-title" data-aos="fade-up">About Our Project</h2>
+          <div class="row g-4">
+            <!-- Main Content Column -->
+            <div class="col-lg-6" data-aos="fade-right">
+              <div class="about-content p-4 bg-white rounded-3 shadow-sm h-100">
+                <h3 class="mb-4 text-gradient">
+                  Making Communication Accessible
+                </h3>
+                <p class="mb-4 text-muted">
+                  Our sign language recognition system uses state-of-the-art
+                  machine learning algorithms to bridge the communication gap
+                  between the deaf community and hearing individuals. By
+                  leveraging computer vision and deep learning, we provide
+                  real-time sign language interpretation.
+                </p>
+                <div class="feature-grid">
+                  <div class="feature-item mb-4">
+                    <div class="d-flex align-items-center">
+                      <div class="feature-icon-wrapper me-3">
+                        <i class="fas fa-clock text-accent"></i>
+                      </div>
+                      <div>
+                        <h4 class="h5 mb-2">Real-time Detection</h4>
+                        <p class="text-muted mb-0">
+                          Instant recognition with minimal latency
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="feature-item mb-4">
+                    <div class="d-flex align-items-center">
+                      <div class="feature-icon-wrapper me-3">
+                        <i class="fas fa-chart-line text-accent"></i>
+                      </div>
+                      <div>
+                        <h4 class="h5 mb-2">High Accuracy</h4>
+                        <p class="text-muted mb-0">
+                          98% accurate gesture recognition
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="feature-item mb-4">
+                    <div class="d-flex align-items-center">
+                      <div class="feature-icon-wrapper me-3">
+                        <i class="fas fa-mobile-alt text-accent"></i>
+                      </div>
+                      <div>
+                        <h4 class="h5 mb-2">Cross-Platform</h4>
+                        <p class="text-muted mb-0">
+                          Works on all major devices
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="feature-item">
+                    <div class="d-flex align-items-center">
+                      <div class="feature-icon-wrapper me-3">
+                        <i class="fas fa-brain text-accent"></i>
+                      </div>
+                      <div>
+                        <h4 class="h5 mb-2">AI-Powered</h4>
+                        <p class="text-muted mb-0">Advanced ML algorithms</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Vision & Mission Column -->
+            <div class="col-lg-6" data-aos="fade-left">
+              <div class="row g-4">
+                <!-- Vision Card -->
+                <div class="col-12">
+                  <div class="vision-card p-4 bg-white rounded-3 shadow-sm">
+                    <div class="d-flex align-items-center mb-3">
+                      <div class="vision-icon-wrapper me-3">
+                        <i class="fas fa-eye text-accent"></i>
+                      </div>
+                      <h3 class="h4 mb-0">Our Vision</h3>
+                    </div>
+                    <p class="text-muted mb-0">
+                      To create a world where communication barriers no longer
+                      exist, enabling seamless interaction between deaf and
+                      hearing communities through innovative technology.
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Technology Stack Card -->
+                <div class="col-12">
+                  <div class="tech-card p-4 bg-white rounded-3 shadow-sm">
+                    <h3 class="h4 mb-4">Technology Stack</h3>
+                    <div class="row g-3">
+                      <div class="col-6">
+                        <div
+                          class="tech-item text-center p-3 rounded-3 bg-light"
+                        >
+                          <i class="fab fa-python mb-2 text-accent"></i>
+                          <p class="mb-0">Python</p>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div
+                          class="tech-item text-center p-3 rounded-3 bg-light"
+                        >
+                          <i class="fas fa-brain mb-2 text-accent"></i>
+                          <p class="mb-0">TensorFlow</p>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div
+                          class="tech-item text-center p-3 rounded-3 bg-light"
+                        >
+                          <i class="fas fa-camera mb-2 text-accent"></i>
+                          <p class="mb-0">OpenCV</p>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div
+                          class="tech-item text-center p-3 rounded-3 bg-light"
+                        >
+                          <i class="fas fa-server mb-2 text-accent"></i>
+                          <p class="mb-0">Flask</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="section" id="features">
+        <div class="container">
+          <h2 class="section-title" data-aos="fade-up">Key Features</h2>
+          <div class="row">
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="feature-card text-center">
+                <i class="fas fa-clock feature-icon text-accent"></i>
+                <h3>Real-Time Processing</h3>
+                <p>
+                  Instant recognition and translation of sign language gestures
+                  with minimal latency.
+                </p>
+              </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="feature-card text-center">
+                <i class="fas fa-brain feature-icon text-accent"></i>
+                <h3>AI-Powered</h3>
+                <p>
+                  Advanced machine learning algorithms ensure high accuracy in
+                  gesture recognition.
+                </p>
+              </div>
+            </div>
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
+              <div class="feature-card text-center">
+                <i class="fas fa-mobile-alt feature-icon text-accent"></i>
+                <h3>Cross-Platform</h3>
+                <p>Works seamlessly across different devices and platforms.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Statistics Section -->
+      <section class="section section-dark">
+        <div class="container">
+          <div class="row">
+            <div class="col-md-3" data-aos="fade-up">
+              <div class="stat-card">
+                <div class="stat-number">98%</div>
+                <div class="stat-label">Accuracy Rate</div>
+              </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+              <div class="stat-card">
+                <div class="stat-number">15+</div>
+                <div class="stat-label">Supported Gestures</div>
+              </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+              <div class="stat-card">
+                <div class="stat-number">50ms</div>
+                <div class="stat-label">Response Time</div>
+              </div>
+            </div>
+            <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+              <div class="stat-card">
+                <div class="stat-number">1000+</div>
+                <div class="stat-label">Daily Users</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Team Section -->
+      <section class="section team-section" id="team">
+        <div class="container">
+          <h2 class="section-title" data-aos="fade-up">Meet Our Team</h2>
+          <div class="row">
+            <!-- Professor -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-chalkboard-teacher"></i>
+                  <!-- <img src="https://cse.kiit.ac.in/wp-content/uploads/2019/01/Arup-Sarkar.jpg" alt="About Project" class="img-fluid rounded-3"> -->
+                </div>
+                <h3 class="team-name">Arup Sarkar</h3>
+                <p class="team-role">Project Guide</p>
+                <p class="team-desc">
+                  Blockchain and Machine Learning expert with extensive academic
+                  experience.
+                </p>
+                <div class="social-links">
+                  <a href="https://scholar.google.co.in/citations?user=wUtv4b4AAAAJ&hl=en" target="_blank">
+                    <i class="fab fa-google-scholar"></i></a>
+                  <a href="https://www.linkedin.com/in/arup-sarkar-31653411" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- ML Engineer -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="200">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-brain"></i>
+                  <!-- <img src="https://avatars.githubusercontent.com/u/109453339?v=4" alt="About Project" class="img-fluid rounded-3"> -->
+                </div>
+                <h3 class="team-name">Aman Gupta</h3>
+                <p class="team-role">Machine Learning Engineer</p>
+                <p class="team-desc">
+                  Specialized in computer vision and deep learning models for
+                  gesture recognition.
+                </p>
+                <div class="social-links">
+                  <a href="https://github.com/amangupta143" target="_blank"
+                    ><i class="fab fa-github"></i
+                  ></a>
+                  <a href="https://linkedin.com/in/amangupta143" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Full Stack Developer -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-code"></i>
+                </div>
+                <h3 class="team-name">Shakshi</h3>
+                <p class="team-role">Full Stack Developer</p>
+                <p class="team-desc">
+                  Expert in web development and real-time video processing
+                  applications.
+                </p>
+                <div class="social-links">
+                  <a href="https://github.com/Shakshi222" target="_blank"
+                    ><i class="fab fa-github"></i
+                  ></a>
+                  <a href="https://www.linkedin.com/in/shak-shi/" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Scientist -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="400">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="team-name">Tanvi Upadhyay</h3>
+                <p class="team-role">Data Scientist</p>
+                <p class="team-desc">
+                  Focused on data analysis and model optimization for improved
+                  accuracy.
+                </p>
+                <div class="social-links">
+                  <a href="https://github.com" target="_blank"
+                    ><i class="fab fa-github"></i
+                  ></a>
+                  <a href="https://linkedin.com" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- UI/UX Designer -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="500">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-paint-brush"></i>
+                </div>
+                <h3 class="team-name">Unmesha Pradhan</h3>
+                <p class="team-role">UI/UX Designer</p>
+                <p class="team-desc">
+                  Creating intuitive and accessible interfaces for seamless user
+                  experience.
+                </p>
+                <div class="social-links">
+                  <a href="https://github.com/UnmeshaPradhan" target="_blank"
+                    ><i class="fab fa-github"></i
+                  ></a>
+                  <a href="https://www.linkedin.com/in/unmesha-pradhan" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Project Manager -->
+            <div class="col-lg-4" data-aos="fade-up" data-aos-delay="600">
+              <div class="team-card text-center">
+                <div class="team-image">
+                  <i class="fas fa-tasks"></i>
+                </div>
+                <h3 class="team-name">Aditya Raj</h3>
+                <p class="team-role">Project Manager</p>
+                <p class="team-desc">
+                  Coordinating team efforts and ensuring project milestones are
+                  met.
+                </p>
+                <div class="social-links">
+                  <a href="https://github.com" target="_blank"
+                    ><i class="fab fa-github"></i
+                  ></a>
+                  <a href="https://linkedin.com" target="_blank"
+                    ><i class="fab fa-linkedin"></i
+                  ></a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact Section -->
+      <section class="section section-dark" id="contact">
+        <div class="container">
+          <h2 class="section-title" data-aos="fade-up">Get in Touch</h2>
+          <div class="row justify-content-center">
+            <div class="col-lg-6" data-aos="fade-up">
+              <div class="text-center">
+                <p class="mb-4">
+                  Have questions about our project? We'd love to hear from you!
+                </p>
+                <div class="d-flex justify-content-center gap-4">
+                  <a href="mailto:contact@signlang.ai" class="btn custom-btn">
+                    <i class="fas fa-envelope me-2"></i>Email Us
+                  </a>
+                  <a
+                    href="https://github.com/signlang-ai"
+                    class="btn custom-btn"
+                  >
+                    <i class="fab fa-github me-2"></i>GitHub
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="scroll-top">
+        <i class="fas fa-arrow-up"></i>
+      </div>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="container">
+          <div class="social-links mb-4">
+            <a href="#"><i class="fab fa-github"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+          </div>
+          <p class="footer-text">
+            © 2025 Sign Language Recognition Project. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+      // Initialize AOS
+      AOS.init({
+        duration: 1000,
+        once: true,
+        offset: 100,
+        easing: "ease-out-cubic",
+      });
+
+      // Navbar scroll effect
+      window.addEventListener("scroll", function () {
+        const navbar = document.querySelector(".navbar");
+        const scrollTop = document.querySelector(".scroll-top");
+
+        if (window.scrollY > 50) {
+          navbar.classList.add("scrolled");
+          scrollTop.classList.add("visible");
+        } else {
+          navbar.classList.remove("scrolled");
+          scrollTop.classList.remove("visible");
+        }
+      });
+
+      // Scroll to top functionality
+      document.querySelector(".scroll-top").addEventListener("click", () => {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
+      });
+
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("href");
+          if (targetId === "#") return;
+
+          const targetElement = document.querySelector(targetId);
+          if (targetElement) {
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+
+          // Close mobile menu if open
+          const navbarToggler = document.querySelector(".navbar-toggler");
+          const navbarCollapse = document.querySelector(".navbar-collapse");
+          if (navbarCollapse.classList.contains("show")) {
+            navbarToggler.click();
+          }
+        });
+      });
+
+      // Statistics counter animation
+      const stats = document.querySelectorAll(".stat-number");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const target = entry.target;
+              const value = target.innerText;
+              let startValue = 0;
+              const duration = 2000;
+              const increment = value.includes("%")
+                ? parseFloat(value) / (duration / 16)
+                : parseInt(value) / (duration / 16);
+
+              const counter = setInterval(() => {
+                startValue += increment;
+                if (value.includes("%")) {
+                  target.innerText = `${Math.min(
+                    startValue,
+                    parseFloat(value)
+                  ).toFixed(1)}%`;
+                  if (startValue >= parseFloat(value)) clearInterval(counter);
+                } else if (value.includes("ms")) {
+                  target.innerText = `${Math.min(
+                    Math.round(startValue),
+                    parseInt(value)
+                  )}ms`;
+                  if (startValue >= parseInt(value)) clearInterval(counter);
+                } else if (value.includes("+")) {
+                  target.innerText = `${Math.min(
+                    Math.round(startValue),
+                    parseInt(value)
+                  )}+`;
+                  if (startValue >= parseInt(value)) clearInterval(counter);
+                } else {
+                  target.innerText = Math.min(
+                    Math.round(startValue),
+                    parseInt(value)
+                  );
+                  if (startValue >= parseInt(value)) clearInterval(counter);
+                }
+              }, 16);
+
+              observer.unobserve(target);
+            }
+          });
+        },
+        {
+          threshold: 0.5,
+        }
+      );
+
+      stats.forEach((stat) => observer.observe(stat));
+
+      // Add active class to current section in navbar
+      const sections = document.querySelectorAll("section");
+      const navLinks = document.querySelectorAll(".nav-link");
+
+      window.addEventListener("scroll", () => {
+        let current = "";
+        sections.forEach((section) => {
+          const sectionTop = section.offsetTop;
+          const sectionHeight = section.clientHeight;
+          if (window.scrollY >= sectionTop - 150) {
+            current = section.getAttribute("id");
+          }
+        });
+
+        navLinks.forEach((link) => {
+          link.classList.remove("active");
+          if (link.getAttribute("href").slice(1) === current) {
+            link.classList.add("active");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
