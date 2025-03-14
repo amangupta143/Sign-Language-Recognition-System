@@ -570,6 +570,9 @@
         <div class="detection-container">
             <div class="video-container">
                 <img src="{{ url_for('video_feed') }}" class="video-feed" alt="Video Feed">
+                <div class="camera-notice" style="position: absolute; top: 10px; left: 10px; background-color: rgba(0, 0, 0, 0.7); color: white; padding: 8px; border-radius: 5px; display: none;">
+                    <i class="fas fa-exclamation-triangle"></i> Camera access required for detection
+                </div>
             </div>
             
             <div class="history-container">
@@ -754,37 +757,6 @@
     </footer>
 
     <script>
-        // Mobile navigation toggle
-        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
-        const navLinks = document.querySelector('.nav-links');
-
-        mobileNavToggle.forEach(toggle => {
-            toggle.addEventListener('click', () => {
-                navLinks.classList.toggle('active');
-                
-                // Toggle between bars and times icon
-                const icon = toggle.querySelector('i');
-                if (icon.classList.contains('fa-bars')) {
-                    icon.classList.remove('fa-bars');
-                    icon.classList.add('fa-times');
-                } else {
-                    icon.classList.remove('fa-times');
-                    icon.classList.add('fa-bars');
-                }
-            });
-        });
-        
-        // Navbar scroll effect
-        const navbar = document.getElementById('navbar');
-        
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-        
         // Sound functionality
         let soundEnabled = false;
         let lastTimestamp = null;
@@ -861,6 +833,74 @@
         
         // Initial history load
         document.addEventListener('DOMContentLoaded', refreshHistory);
+
+        // Mobile navigation toggle
+        const mobileNavToggle = document.querySelectorAll('.mobile-nav-toggle');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileNavToggle.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                
+                // Toggle between bars and times icon
+                const icon = toggle.querySelector('i');
+                if (icon.classList.contains('fa-bars')) {
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-times');
+                } else {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+        });
+        
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Check for camera message in the video feed
+        const videoFeed = document.querySelector('.video-feed');
+        const cameraNotice = document.querySelector('.camera-notice');
+        
+        // Show camera notice immediately on load for deployed environments
+        if (window.location.hostname !== 'localhost' && 
+            window.location.hostname !== '127.0.0.1') {
+            cameraNotice.style.display = 'block';
+        }
+        
+        // Monitor for camera availability
+        videoFeed.addEventListener('load', function() {
+            setTimeout(() => {
+                // Create a canvas to analyze the video feed
+                const canvas = document.createElement('canvas');
+                canvas.width = videoFeed.width;
+                canvas.height = videoFeed.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoFeed, 0, 0);
+                
+                // Check if it's our placeholder image
+                try {
+                    const imgData = ctx.getImageData(100, 240, 400, 1).data;
+                    const isBlack = imgData[0] === 0 && imgData[1] === 0 && imgData[2] === 0;
+                    
+                    // If our detection point is black, show the notice
+                    if (isBlack) {
+                        cameraNotice.style.display = 'block';
+                    } else {
+                        cameraNotice.style.display = 'none';
+                    }
+                } catch(e) {
+                    // CORS or other error, we can't check the image
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
